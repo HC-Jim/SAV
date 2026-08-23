@@ -1,0 +1,17 @@
+# Blueprint de Render para el frontend Flutter (sitio estático prebuilt).
+# La carpeta build/web ya viene compilada en el repo, por eso el build es un no-op.
+# Si prefieres configurarlo a mano en el panel de Render, ignora este archivo y usa:
+#   - Publish directory: build/web
+#   - Build command: (vacío)
+#   - Rewrite: /*  ->  /index.html
+services:
+  - type: web
+    name: frontend-sav-mantenimiento
+    runtime: static
+    buildCommand: echo "sitio prebuilt, sin compilacion"
+    staticPublishPath: build/web
+    pullRequestPreviewsEnabled: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
