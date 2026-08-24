@@ -5,6 +5,9 @@ import '../theme.dart';
 import 'cliente/catalogo_screen.dart';
 import 'cliente/mis_reservas_screen.dart';
 import 'crear_orden_screen.dart';
+import 'gestion/clientes_admin_screen.dart';
+import 'gestion/seguros_screen.dart';
+import 'gestion/vehiculos_admin_screen.dart';
 import 'login_screen.dart';
 import 'ordenes_list_screen.dart';
 import 'repuestos_screen.dart';
@@ -110,6 +113,15 @@ class MenuScreen extends StatelessWidget {
               Icons.add_box_outlined, () => const CrearOrdenScreen()),
         _OpcionMenu('Catálogo de repuestos', 'Stock y costos del almacén',
             Icons.inventory_2_outlined, () => const RepuestosScreen()),
+        if (esJefe)
+          _OpcionMenu('Gestión de vehículos', 'Registrar y editar la flota',
+              Icons.garage_outlined, () => const VehiculosAdminScreen()),
+        if (esJefe)
+          _OpcionMenu('Gestión de clientes', 'Registrar y editar clientes',
+              Icons.people_outline, () => const ClientesAdminScreen()),
+        if (esJefe)
+          _OpcionMenu('Seguros y pólizas', 'Registrar pólizas y ver vencimientos',
+              Icons.shield_outlined, () => const SegurosScreen()),
       ];
 
   List<_OpcionMenu> _opcionesCliente() => [

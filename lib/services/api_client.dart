@@ -41,6 +41,11 @@ class ApiClient {
     return _procesar(res);
   }
 
+  Future<dynamic> delete(String url) async {
+    final res = await http.delete(Uri.parse(url), headers: _headers);
+    return _procesar(res);
+  }
+
   dynamic _procesar(http.Response res) {
     final cuerpo = res.body.isNotEmpty ? jsonDecode(res.body) : null;
     if (res.statusCode >= 200 && res.statusCode < 300) {
