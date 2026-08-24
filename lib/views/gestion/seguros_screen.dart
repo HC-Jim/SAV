@@ -86,13 +86,57 @@ class _SegurosScreenState extends State<SegurosScreen> {
     }
     return Card(
       child: ListTile(
-        leading: const Icon(Icons.shield_outlined),
+        leading: Icon(Icons.shield_outlined, color: color),
         title: Text('${s.tipoSeguro ?? 'Seguro'}  ·  ${s.numPoliza ?? ''}'),
-        subtitle: Text('${s.vehiculoDesc}\n${s.aseguradoraEntidad ?? ''}  ·  vence: ${s.fechaVencimiento ?? '-'}'),
+        subtitle: Text('${s.vehiculoDesc}\n${s.aseguradoraEntidad ?? ''}  ·  vence: ${s.fechaVencimiento ?? '-'}\n'
+            '$etiqueta'),
         isThreeLine: true,
-        trailing: Text(etiqueta, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+        trailing: TextButton.icon(
+          icon: const Icon(Icons.autorenew),
+          label: const Text('Renovar'),
+          onPressed: () => _renovar(s),
+        ),
       ),
     );
+  }
+
+  Future<void> _renovar(Seguro s) async {
+    final poliza = TextEditingController(text: s.numPoliza ?? '');
+    final emision = TextEditingController();
+    final vencimiento = TextEditingController();
+
+    final datos = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Renovar póliza (${s.vehiculoDesc})'),
+        content: SingleChildScrollView(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            _campo(poliza, 'N° de póliza (nueva)'),
+            _campo(emision, 'Fecha emisión (YYYY-MM-DD)'),
+            _campo(vencimiento, 'Fecha vencimiento (YYYY-MM-DD)'),
+          ]),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, {
+              'num_poliza': poliza.text.trim(),
+              'fecha_emision': emision.text.trim(),
+              'fecha_vencimiento': vencimiento.text.trim(),
+            }),
+            child: const Text('Renovar'),
+          ),
+        ],
+      ),
+    );
+    if (datos != null) {
+      try {
+        await _svc.renovarSeguro(s.id, datos);
+        if (mounted) _cargar();
+      } on ApiException catch (e) {
+        _snack(e.mensaje);
+      }
+    }
   }
 
   Future<void> _abrirForm() async {

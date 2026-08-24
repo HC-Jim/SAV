@@ -6,6 +6,7 @@ import 'cliente/catalogo_screen.dart';
 import 'cliente/mis_reservas_screen.dart';
 import 'crear_orden_screen.dart';
 import 'gestion/clientes_admin_screen.dart';
+import 'gestion/precios_screen.dart';
 import 'gestion/seguros_screen.dart';
 import 'gestion/vehiculos_admin_screen.dart';
 import 'login_screen.dart';
@@ -120,7 +121,10 @@ class MenuScreen extends StatelessWidget {
           _OpcionMenu('Gestión de clientes', 'Registrar y editar clientes',
               Icons.people_outline, () => const ClientesAdminScreen()),
         if (esJefe)
-          _OpcionMenu('Seguros y pólizas', 'Registrar pólizas y ver vencimientos',
+          _OpcionMenu('Catálogo de precios', 'Tarifas por categoría de vehículo',
+              Icons.sell_outlined, () => const PreciosScreen()),
+        if (esJefe)
+          _OpcionMenu('Seguros y renovaciones', 'Registrar y renovar pólizas',
               Icons.shield_outlined, () => const SegurosScreen()),
       ];
 

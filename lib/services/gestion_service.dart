@@ -1,4 +1,5 @@
 import '../config/api_config.dart';
+import '../models/catalogo_precio.dart';
 import '../models/cliente.dart';
 import '../models/seguro.dart';
 import '../models/vehiculo.dart';
@@ -43,4 +44,17 @@ class GestionService {
   }
 
   Future<void> crearSeguro(Map<String, dynamic> datos) => _api.post('$_base/seguros', datos);
+  Future<void> renovarSeguro(int id, Map<String, dynamic> datos) =>
+      _api.post('$_base/seguros/$id/renovar', datos);
+
+  // ---- Catálogo de precios ----
+  Future<List<CatalogoPrecio>> listarPrecios() async {
+    final data = await _api.get('$_base/precios') as List;
+    return data.map((e) => CatalogoPrecio.fromJson(e)).toList();
+  }
+
+  Future<void> crearPrecio(Map<String, dynamic> datos) => _api.post('$_base/precios', datos);
+  Future<void> actualizarPrecio(int id, Map<String, dynamic> datos) =>
+      _api.patch('$_base/precios/$id', datos);
+  Future<void> eliminarPrecio(int id) => _api.delete('$_base/precios/$id');
 }
