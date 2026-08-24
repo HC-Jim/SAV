@@ -122,12 +122,6 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
   List<Widget> _acciones(Reserva r) {
     if (r.esFinal) return [];
     final acciones = <Widget>[];
-    if (r.estado == EstadoReserva.pendientePago) {
-      acciones.add(FilledButton(
-        onPressed: _procesando ? null : () => _ejecutar(() => _svc.pagarGarantia(r.id)),
-        child: const Text('Pagar garantía'),
-      ));
-    }
     if (r.estado == EstadoReserva.confirmada) {
       acciones.add(FilledButton(
         onPressed: _procesando ? null : () => _ejecutar(() => _svc.pagarAlquiler(r.id)),

@@ -39,17 +39,6 @@ class AlquilerService {
     return Reserva.fromJson(data);
   }
 
-  Future<void> crearReserva(
-          {required int vehiculoId, required String fechaInicio, required String fechaFin}) =>
-      _api.post('$_base/reservas', {
-        'vehiculo_id': vehiculoId,
-        'fecha_inicio': fechaInicio,
-        'fecha_fin': fechaFin,
-      });
-
-  Future<void> pagarGarantia(int reservaId, {String metodo = 'TARJETA'}) =>
-      _api.patch('$_base/reservas/$reservaId/pagar-garantia', {'metodo': metodo});
-
   Future<void> pagarAlquiler(int reservaId, {String metodo = 'TARJETA'}) =>
       _api.patch('$_base/reservas/$reservaId/pagar-alquiler', {'metodo': metodo});
 

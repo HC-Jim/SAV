@@ -129,12 +129,6 @@ class _ReservasInternasScreenState extends State<ReservasInternasScreen> {
 
   List<Widget> _accionesCajero(Reserva r) {
     final acciones = <Widget>[];
-    if (r.estado == EstadoReserva.pendientePago) {
-      acciones.add(FilledButton(
-        onPressed: _procesando ? null : () => _ejecutar(() => _svc.pagarGarantia(r.id)),
-        child: const Text('Registrar pago de garantía'),
-      ));
-    }
     if (r.estado == EstadoReserva.confirmada) {
       acciones.add(FilledButton(
         onPressed: _procesando ? null : () => _ejecutar(() => _svc.pagarAlquiler(r.id)),
