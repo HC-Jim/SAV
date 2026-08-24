@@ -109,7 +109,8 @@ class MenuScreen extends StatelessWidget {
         Icons.directions_car_outlined, () => const CatalogoScreen());
     final clientes = _OpcionMenu('Gestión de clientes', 'Registrar y editar clientes',
         Icons.people_outline, () => const ClientesAdminScreen());
-    final reservasInternas = _OpcionMenu('Reservas', 'Ver todas las reservas',
+    final reservasInternas = _OpcionMenu('Reservas',
+        usuario.esCajero ? 'Pagos, devoluciones y cancelaciones' : 'Ver todas las reservas',
         Icons.event_note_outlined, () => const ReservasInternasScreen());
     final gestionFlota = [
       _OpcionMenu('Gestión de vehículos', 'Registrar y editar la flota',
