@@ -62,25 +62,6 @@ class _DetalleVehiculoScreenState extends State<DetalleVehiculoScreen> {
     }
   }
 
-  Future<void> _reservar() async {
-    if (!_disponible) return;
-    setState(() => _procesando = true);
-    try {
-      await _svc.crearReserva(
-        vehiculoId: widget.vehiculo.id,
-        fechaInicio: _fmt(_inicio!),
-        fechaFin: _fmt(_fin!),
-      );
-      if (!mounted) return;
-      _snack('Reserva creada. Ve a "Mis reservas" para pagar la garantía.');
-      Navigator.of(context).pop(true);
-    } on ApiException catch (e) {
-      _snack(e.mensaje);
-    } finally {
-      if (mounted) setState(() => _procesando = false);
-    }
-  }
-
   void _snack(String m) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
 
@@ -140,10 +121,11 @@ class _DetalleVehiculoScreenState extends State<DetalleVehiculoScreen> {
                     color: Colors.black,
                     fontWeight: _disponible ? FontWeight.bold : FontWeight.normal)),
           ],
-          const SizedBox(height: 12),
-          FilledButton(
-            onPressed: (_disponible && !_procesando) ? _reservar : null,
-            child: const Text('Reservar'),
+          const SizedBox(height: 16),
+          const Text(
+            'Para reservar este vehículo, acércate a un Asesor de Ventas: '
+            'él generará tu cotización y luego podrás pagar la garantía desde "Mis cotizaciones".',
+            style: TextStyle(color: Colors.black54, fontSize: 13),
           ),
         ],
       ),

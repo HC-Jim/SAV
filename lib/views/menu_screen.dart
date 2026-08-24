@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import '../models/usuario.dart';
 import '../state/auth_controller.dart';
 import '../theme.dart';
+import 'asesor/cotizaciones_screen.dart';
 import 'cliente/catalogo_screen.dart';
+import 'cliente/mis_cotizaciones_screen.dart';
 import 'cliente/mis_reservas_screen.dart';
 import 'crear_orden_screen.dart';
 import 'gestion/clientes_admin_screen.dart';
@@ -105,26 +107,22 @@ class MenuScreen extends StatelessWidget {
         () => const OrdenesListScreen());
     final repuestos = _OpcionMenu('Catálogo de repuestos', 'Stock y costos del almacén',
         Icons.inventory_2_outlined, () => const RepuestosScreen());
-    final catalogo = _OpcionMenu('Catálogo de vehículos', 'Buscar y reservar un vehículo',
+    final catalogo = _OpcionMenu('Catálogo de vehículos', 'Consultar vehículos y disponibilidad',
         Icons.directions_car_outlined, () => const CatalogoScreen());
     final clientes = _OpcionMenu('Gestión de clientes', 'Registrar y editar clientes',
         Icons.people_outline, () => const ClientesAdminScreen());
+    final cotizaciones = _OpcionMenu('Cotizaciones', 'Generar y gestionar cotizaciones',
+        Icons.request_quote_outlined, () => const CotizacionesScreen());
     final reservasInternas = _OpcionMenu('Reservas',
         usuario.esCajero ? 'Pagos, devoluciones y cancelaciones' : 'Ver todas las reservas',
         Icons.event_note_outlined, () => const ReservasInternasScreen());
-    final gestionFlota = [
-      _OpcionMenu('Gestión de vehículos', 'Registrar y editar la flota',
-          Icons.garage_outlined, () => const VehiculosAdminScreen()),
-      _OpcionMenu('Catálogo de precios', 'Tarifas por categoría de vehículo',
-          Icons.sell_outlined, () => const PreciosScreen()),
-      _OpcionMenu('Seguros y renovaciones', 'Registrar y renovar pólizas',
-          Icons.shield_outlined, () => const SegurosScreen()),
-    ];
 
     if (usuario.esCliente) {
       return [
         catalogo,
-        _OpcionMenu('Mis reservas', 'Pagar, cancelar y ver mis reservas',
+        _OpcionMenu('Mis cotizaciones', 'Aceptar/rechazar y pagar garantía',
+            Icons.request_quote_outlined, () => const MisCotizacionesScreen()),
+        _OpcionMenu('Mis reservas', 'Pagar alquiler y cancelar',
             Icons.receipt_long_outlined, () => const MisReservasScreen()),
       ];
     }
@@ -136,24 +134,29 @@ class MenuScreen extends StatelessWidget {
       ];
     }
     if (usuario.esAdministrador) {
-      return [clientes, ...gestionFlota];
+      return [
+        _OpcionMenu('Gestión de vehículos', 'Registrar y editar la flota',
+            Icons.garage_outlined, () => const VehiculosAdminScreen()),
+        _OpcionMenu('Catálogo de precios', 'Tarifas por categoría de vehículo',
+            Icons.sell_outlined, () => const PreciosScreen()),
+        _OpcionMenu('Seguros y renovaciones', 'Registrar y renovar pólizas',
+            Icons.shield_outlined, () => const SegurosScreen()),
+      ];
     }
     if (usuario.esAsesor) {
-      return [catalogo, clientes, reservasInternas];
+      return [catalogo, clientes, cotizaciones, reservasInternas];
     }
     if (usuario.esCajero) {
       return [reservasInternas];
     }
-    // Jefe de Logística (por defecto): todo lo operativo + gestión.
+    // Jefe de Logística: mantenimiento + consulta de reservas.
     return [
       ordenes,
-      _OpcionMenu('Vehículos por mantener', 'Revisar fechas y crear órdenes',
+      _OpcionMenu('Vehículos por mantener', 'Revisar flota y crear órdenes',
           Icons.directions_car_outlined, () => const VehiculosScreen()),
       _OpcionMenu('Crear orden de mantenimiento', 'Iniciar una nueva OM',
           Icons.add_box_outlined, () => const CrearOrdenScreen()),
       repuestos,
-      clientes,
-      ...gestionFlota,
       reservasInternas,
     ];
   }
