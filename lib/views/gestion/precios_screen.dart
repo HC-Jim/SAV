@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../models/catalogo_precio.dart';
+import '../../models/vehiculo.dart';
 import '../../services/api_client.dart';
 import '../../services/gestion_service.dart';
 
-/// Catálogo de Precios (Administrador): precio regular / normal / campaña por categoría.
+/// Catálogo de Precios (Administrador): muestra los vehículos y permite editar
+/// el precio de cada uno (regular / normal / campaña). Muestra su estado.
 class PreciosScreen extends StatefulWidget {
   const PreciosScreen({super.key});
   @override
@@ -12,7 +13,7 @@ class PreciosScreen extends StatefulWidget {
 
 class _PreciosScreenState extends State<PreciosScreen> {
   final _svc = GestionService();
-  late Future<List<CatalogoPrecio>> _futuro;
+  late Future<List<Vehiculo>> _futuro;
 
   @override
   void initState() {
@@ -20,42 +21,16 @@ class _PreciosScreenState extends State<PreciosScreen> {
     _cargar();
   }
 
-  void _cargar() => setState(() => _futuro = _svc.listarPrecios());
+  void _cargar() => setState(() => _futuro = _svc.listarVehiculos());
 
   void _snack(String m) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
-
-  Future<void> _guardar(CatalogoPrecio? p, Map<String, dynamic> datos) async {
-    try {
-      if (p == null) {
-        await _svc.crearPrecio(datos);
-      } else {
-        await _svc.actualizarPrecio(p.id, datos);
-      }
-      if (mounted) _cargar();
-    } on ApiException catch (e) {
-      _snack(e.mensaje);
-    }
-  }
-
-  Future<void> _eliminar(CatalogoPrecio p) async {
-    try {
-      await _svc.eliminarPrecio(p.id);
-      if (mounted) _cargar();
-    } on ApiException catch (e) {
-      _snack(e.mensaje);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Catálogo de precios')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _abrirForm(null),
-        child: const Icon(Icons.add),
-      ),
-      body: FutureBuilder<List<CatalogoPrecio>>(
+      body: FutureBuilder<List<Vehiculo>>(
         future: _futuro,
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
@@ -63,7 +38,7 @@ class _PreciosScreenState extends State<PreciosScreen> {
           }
           if (snap.hasError) return Center(child: Text('${snap.error}'));
           final lista = snap.data ?? [];
-          if (lista.isEmpty) return const Center(child: Text('Sin precios registrados.'));
+          if (lista.isEmpty) return const Center(child: Text('Sin vehículos.'));
           return ListView(
             padding: const EdgeInsets.all(12),
             children: lista.map(_card).toList(),
@@ -73,7 +48,7 @@ class _PreciosScreenState extends State<PreciosScreen> {
     );
   }
 
-  Widget _card(CatalogoPrecio p) {
+  Widget _card(Vehiculo v) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -83,46 +58,42 @@ class _PreciosScreenState extends State<PreciosScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(p.categoria, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Row(children: [
-                  IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => _abrirForm(p)),
-                  IconButton(icon: const Icon(Icons.delete_outline), onPressed: () => _eliminar(p)),
-                ]),
+                Expanded(
+                  child: Text('${v.marca ?? ''} ${v.modelo ?? ''} (${v.placa})'.trim(),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+                IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => _editarPrecio(v)),
               ],
             ),
-            if (p.descripcion != null && p.descripcion!.isNotEmpty)
-              Text(p.descripcion!, style: const TextStyle(color: Colors.black54)),
+            Text('SKU: ${v.sku ?? '-'}  ·  Categoría: ${v.categoria ?? '-'}  ·  ${v.estadoLegible}',
+                style: const TextStyle(color: Colors.black54)),
             const SizedBox(height: 6),
-            Text('Regular: S/ ${p.precioRegular.toStringAsFixed(2)}'),
-            Text('Normal: S/ ${p.precioNormal.toStringAsFixed(2)}'),
-            Text('Campaña: S/ ${p.precioCampania.toStringAsFixed(2)}  '
-                '(desde ${p.diasMinCampania} días)'),
+            Text('Regular: S/ ${v.precioRegular.toStringAsFixed(2)}'),
+            Text('Normal: S/ ${v.precioNormal.toStringAsFixed(2)}'),
+            Text('Campaña: S/ ${v.precioCampania.toStringAsFixed(2)}  '
+                '(desde ${v.diasMinCampania} días)'),
           ],
         ),
       ),
     );
   }
 
-  Future<void> _abrirForm(CatalogoPrecio? p) async {
-    final categoria = TextEditingController(text: p?.categoria ?? '');
-    final descripcion = TextEditingController(text: p?.descripcion ?? '');
-    final regular = TextEditingController(text: p?.precioRegular.toString() ?? '');
-    final normal = TextEditingController(text: p?.precioNormal.toString() ?? '');
-    final campania = TextEditingController(text: p?.precioCampania.toString() ?? '');
-    final diasMin = TextEditingController(text: p?.diasMinCampania.toString() ?? '7');
+  Future<void> _editarPrecio(Vehiculo v) async {
+    final regular = TextEditingController(text: v.precioRegular.toString());
+    final normal = TextEditingController(text: v.precioNormal.toString());
+    final campania = TextEditingController(text: v.precioCampania.toString());
+    final diasMin = TextEditingController(text: v.diasMinCampania.toString());
 
     final datos = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text(p == null ? 'Nuevo precio' : 'Editar precio'),
+        title: Text('Precio · ${v.placa}'),
         content: SingleChildScrollView(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            _campo(categoria, 'Categoría'),
-            _campo(descripcion, 'Descripción'),
-            _campo(regular, 'Precio regular (S/)', numero: true),
-            _campo(normal, 'Precio normal (S/)', numero: true),
-            _campo(campania, 'Precio campaña (S/)', numero: true),
-            _campo(diasMin, 'Días mínimos para campaña', numero: true),
+            _campo(regular, 'Precio regular (S/)'),
+            _campo(normal, 'Precio normal (S/)'),
+            _campo(campania, 'Precio campaña (S/)'),
+            _campo(diasMin, 'Días mínimos para campaña'),
             const Padding(
               padding: EdgeInsets.only(top: 8),
               child: Text('El precio regular debe ser mayor al normal.',
@@ -134,8 +105,6 @@ class _PreciosScreenState extends State<PreciosScreen> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
           FilledButton(
             onPressed: () => Navigator.pop(context, {
-              'categoria': categoria.text.trim(),
-              'descripcion': descripcion.text.trim(),
               'precio_regular': double.tryParse(regular.text.trim()) ?? 0,
               'precio_normal': double.tryParse(normal.text.trim()) ?? 0,
               'precio_campania': double.tryParse(campania.text.trim()) ?? 0,
@@ -146,14 +115,21 @@ class _PreciosScreenState extends State<PreciosScreen> {
         ],
       ),
     );
-    if (datos != null) _guardar(p, datos);
+    if (datos != null) {
+      try {
+        await _svc.actualizarPrecioVehiculo(v.id, datos);
+        if (mounted) _cargar();
+      } on ApiException catch (e) {
+        _snack(e.mensaje);
+      }
+    }
   }
 
-  Widget _campo(TextEditingController c, String label, {bool numero = false}) => Padding(
+  Widget _campo(TextEditingController c, String label) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: TextField(
           controller: c,
-          keyboardType: numero ? TextInputType.number : TextInputType.text,
+          keyboardType: TextInputType.number,
           decoration: InputDecoration(labelText: label),
         ),
       );

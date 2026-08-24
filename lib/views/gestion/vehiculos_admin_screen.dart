@@ -3,8 +3,8 @@ import '../../models/vehiculo.dart';
 import '../../services/api_client.dart';
 import '../../services/gestion_service.dart';
 
-/// Mantener Vehículo (CRUD) - Administrador. Solo datos del vehículo (el precio
-/// se gestiona en Catálogo de Precios, por categoría).
+/// Gestión de Vehículos (Administrador): edita solo los datos del vehículo.
+/// El precio se maneja en Catálogo de Precios.
 class VehiculosAdminScreen extends StatefulWidget {
   const VehiculosAdminScreen({super.key});
   @override
@@ -14,6 +14,8 @@ class VehiculosAdminScreen extends StatefulWidget {
 class _VehiculosAdminScreenState extends State<VehiculosAdminScreen> {
   final _svc = GestionService();
   late Future<List<Vehiculo>> _futuro;
+
+  static const _categorias = ['Economico', 'Sedan', 'SUV', 'Premium'];
 
   @override
   void initState() {
@@ -72,8 +74,9 @@ class _VehiculosAdminScreenState extends State<VehiculosAdminScreen> {
                       child: ListTile(
                         leading: const Icon(Icons.directions_car),
                         title: Text('${v.marca ?? ''} ${v.modelo ?? ''}'.trim()),
-                        subtitle: Text('SKU: ${v.sku ?? '-'}  ·  ${v.placa}  ·  '
-                            '${v.categoria ?? 'sin categoría'}  ·  ${v.estado ?? ''}'),
+                        subtitle: Text('SKU: ${v.sku ?? '-'}  ·  ${v.placa}\n'
+                            'Categoría: ${v.categoria ?? '-'}  ·  Estado: ${v.estadoLegible}'),
+                        isThreeLine: true,
                         onTap: () => _abrirForm(v),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete_outline),
@@ -104,25 +107,14 @@ class _VehiculosAdminScreenState extends State<VehiculosAdminScreen> {
   }
 
   Future<void> _abrirForm(Vehiculo? v) async {
-    // Categorías disponibles (del catálogo de precios).
-    List<String> categorias = [];
-    try {
-      final precios = await _svc.listarPrecios();
-      categorias = precios.map((p) => p.categoria).toList();
-    } on ApiException catch (_) {
-      categorias = [];
-    }
-    if (!mounted) return;
-
     final sku = TextEditingController(text: v?.sku ?? '');
     final placa = TextEditingController(text: v?.placa ?? '');
     final marca = TextEditingController(text: v?.marca ?? '');
     final modelo = TextEditingController(text: v?.modelo ?? '');
     final anio = TextEditingController(text: v?.anio?.toString() ?? '');
     final color = TextEditingController(text: v?.color ?? '');
-    String? categoria = (v?.categoria != null && categorias.contains(v!.categoria))
-        ? v.categoria
-        : (categorias.isNotEmpty ? categorias.first : null);
+    String? categoria =
+        (v?.categoria != null && _categorias.contains(v!.categoria)) ? v.categoria : _categorias.first;
 
     final datos = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -142,7 +134,7 @@ class _VehiculosAdminScreenState extends State<VehiculosAdminScreen> {
                 child: DropdownButtonFormField<String>(
                   initialValue: categoria,
                   decoration: const InputDecoration(labelText: 'Categoría'),
-                  items: categorias
+                  items: _categorias
                       .map((c) => DropdownMenuItem(value: c, child: Text(c)))
                       .toList(),
                   onChanged: (val) => setLocal(() => categoria = val),
