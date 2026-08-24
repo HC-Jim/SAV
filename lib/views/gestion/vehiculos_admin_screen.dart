@@ -3,7 +3,8 @@ import '../../models/vehiculo.dart';
 import '../../services/api_client.dart';
 import '../../services/gestion_service.dart';
 
-/// Mantener Vehículo (CRUD) - Jefe de Logística.
+/// Mantener Vehículo (CRUD) - Administrador. Solo datos del vehículo (el precio
+/// se gestiona en Catálogo de Precios, por categoría).
 class VehiculosAdminScreen extends StatefulWidget {
   const VehiculosAdminScreen({super.key});
   @override
@@ -21,6 +22,9 @@ class _VehiculosAdminScreenState extends State<VehiculosAdminScreen> {
   }
 
   void _cargar() => setState(() => _futuro = _svc.listarVehiculos());
+
+  void _snack(String m) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
 
   Future<void> _guardar(Vehiculo? v, Map<String, dynamic> datos) async {
     try {
@@ -43,9 +47,6 @@ class _VehiculosAdminScreenState extends State<VehiculosAdminScreen> {
       _snack(e.mensaje);
     }
   }
-
-  void _snack(String m) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +72,8 @@ class _VehiculosAdminScreenState extends State<VehiculosAdminScreen> {
                       child: ListTile(
                         leading: const Icon(Icons.directions_car),
                         title: Text('${v.marca ?? ''} ${v.modelo ?? ''}'.trim()),
-                        subtitle: Text('${v.placa}  ·  S/ ${(v.tarifaDiaria ?? 0).toStringAsFixed(2)}/día  ·  ${v.estado ?? ''}'),
+                        subtitle: Text('SKU: ${v.sku ?? '-'}  ·  ${v.placa}  ·  '
+                            '${v.categoria ?? 'sin categoría'}  ·  ${v.estado ?? ''}'),
                         onTap: () => _abrirForm(v),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete_outline),
@@ -102,41 +104,68 @@ class _VehiculosAdminScreenState extends State<VehiculosAdminScreen> {
   }
 
   Future<void> _abrirForm(Vehiculo? v) async {
+    // Categorías disponibles (del catálogo de precios).
+    List<String> categorias = [];
+    try {
+      final precios = await _svc.listarPrecios();
+      categorias = precios.map((p) => p.categoria).toList();
+    } on ApiException catch (_) {
+      categorias = [];
+    }
+    if (!mounted) return;
+
+    final sku = TextEditingController(text: v?.sku ?? '');
     final placa = TextEditingController(text: v?.placa ?? '');
     final marca = TextEditingController(text: v?.marca ?? '');
     final modelo = TextEditingController(text: v?.modelo ?? '');
     final anio = TextEditingController(text: v?.anio?.toString() ?? '');
     final color = TextEditingController(text: v?.color ?? '');
-    final tarifa = TextEditingController(text: v?.tarifaDiaria?.toString() ?? '');
+    String? categoria = (v?.categoria != null && categorias.contains(v!.categoria))
+        ? v.categoria
+        : (categorias.isNotEmpty ? categorias.first : null);
 
     final datos = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(v == null ? 'Nuevo vehículo' : 'Editar vehículo'),
-        content: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            _campo(placa, 'Placa'),
-            _campo(marca, 'Marca'),
-            _campo(modelo, 'Modelo'),
-            _campo(anio, 'Año', numero: true),
-            _campo(color, 'Color'),
-            _campo(tarifa, 'Tarifa diaria', numero: true),
-          ]),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, {
-              'placa': placa.text.trim(),
-              'marca': marca.text.trim(),
-              'modelo': modelo.text.trim(),
-              'anio': int.tryParse(anio.text.trim()),
-              'color': color.text.trim(),
-              'tarifa_diaria': double.tryParse(tarifa.text.trim()) ?? 0,
-            }),
-            child: const Text('Guardar'),
+      builder: (_) => StatefulBuilder(
+        builder: (context, setLocal) => AlertDialog(
+          title: Text(v == null ? 'Nuevo vehículo' : 'Editar vehículo'),
+          content: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              _campo(sku, 'SKU'),
+              _campo(placa, 'Placa'),
+              _campo(marca, 'Marca'),
+              _campo(modelo, 'Modelo'),
+              _campo(anio, 'Año', numero: true),
+              _campo(color, 'Color'),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: DropdownButtonFormField<String>(
+                  initialValue: categoria,
+                  decoration: const InputDecoration(labelText: 'Categoría'),
+                  items: categorias
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (val) => setLocal(() => categoria = val),
+                ),
+              ),
+            ]),
           ),
-        ],
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, {
+                'sku': sku.text.trim(),
+                'placa': placa.text.trim(),
+                'marca': marca.text.trim(),
+                'modelo': modelo.text.trim(),
+                'anio': int.tryParse(anio.text.trim()),
+                'color': color.text.trim(),
+                'categoria': categoria,
+              }),
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
       ),
     );
     if (datos != null) _guardar(v, datos);

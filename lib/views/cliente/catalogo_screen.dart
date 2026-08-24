@@ -50,7 +50,7 @@ class _CatalogoScreenState extends State<CatalogoScreen> {
                   leading: const Icon(Icons.directions_car),
                   title: Text('${v.marca ?? ''} ${v.modelo ?? ''}'.trim()),
                   subtitle: Text('${v.placa}  ·  ${v.anio ?? ''}  ·  ${v.color ?? ''}\n'
-                      'Tarifa: S/ ${(v.tarifaDiaria ?? 0).toStringAsFixed(2)} /día'),
+                      'Categoría: ${v.categoria ?? '-'}'),
                   isThreeLine: true,
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () async {

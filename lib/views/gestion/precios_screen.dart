@@ -3,7 +3,7 @@ import '../../models/catalogo_precio.dart';
 import '../../services/api_client.dart';
 import '../../services/gestion_service.dart';
 
-/// Registrar Catálogo de Precios (CRUD) - Jefe de Logística.
+/// Catálogo de Precios (Administrador): precio regular / normal / campaña por categoría.
 class PreciosScreen extends StatefulWidget {
   const PreciosScreen({super.key});
   @override
@@ -66,22 +66,39 @@ class _PreciosScreenState extends State<PreciosScreen> {
           if (lista.isEmpty) return const Center(child: Text('Sin precios registrados.'));
           return ListView(
             padding: const EdgeInsets.all(12),
-            children: lista
-                .map((p) => Card(
-                      child: ListTile(
-                        leading: const Icon(Icons.sell_outlined),
-                        title: Text('${p.categoria}  ·  S/ ${p.precioDia.toStringAsFixed(2)}/día'),
-                        subtitle: Text('${p.descripcion ?? ''}${p.vigente ? '' : '  (no vigente)'}'),
-                        onTap: () => _abrirForm(p),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () => _eliminar(p),
-                        ),
-                      ),
-                    ))
-                .toList(),
+            children: lista.map(_card).toList(),
           );
         },
+      ),
+    );
+  }
+
+  Widget _card(CatalogoPrecio p) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(p.categoria, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Row(children: [
+                  IconButton(icon: const Icon(Icons.edit_outlined), onPressed: () => _abrirForm(p)),
+                  IconButton(icon: const Icon(Icons.delete_outline), onPressed: () => _eliminar(p)),
+                ]),
+              ],
+            ),
+            if (p.descripcion != null && p.descripcion!.isNotEmpty)
+              Text(p.descripcion!, style: const TextStyle(color: Colors.black54)),
+            const SizedBox(height: 6),
+            Text('Regular: S/ ${p.precioRegular.toStringAsFixed(2)}'),
+            Text('Normal: S/ ${p.precioNormal.toStringAsFixed(2)}'),
+            Text('Campaña: S/ ${p.precioCampania.toStringAsFixed(2)}  '
+                '(desde ${p.diasMinCampania} días)'),
+          ],
+        ),
       ),
     );
   }
@@ -89,7 +106,10 @@ class _PreciosScreenState extends State<PreciosScreen> {
   Future<void> _abrirForm(CatalogoPrecio? p) async {
     final categoria = TextEditingController(text: p?.categoria ?? '');
     final descripcion = TextEditingController(text: p?.descripcion ?? '');
-    final precio = TextEditingController(text: p?.precioDia.toString() ?? '');
+    final regular = TextEditingController(text: p?.precioRegular.toString() ?? '');
+    final normal = TextEditingController(text: p?.precioNormal.toString() ?? '');
+    final campania = TextEditingController(text: p?.precioCampania.toString() ?? '');
+    final diasMin = TextEditingController(text: p?.diasMinCampania.toString() ?? '7');
 
     final datos = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -99,7 +119,15 @@ class _PreciosScreenState extends State<PreciosScreen> {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             _campo(categoria, 'Categoría'),
             _campo(descripcion, 'Descripción'),
-            _campo(precio, 'Precio por día', numero: true),
+            _campo(regular, 'Precio regular (S/)', numero: true),
+            _campo(normal, 'Precio normal (S/)', numero: true),
+            _campo(campania, 'Precio campaña (S/)', numero: true),
+            _campo(diasMin, 'Días mínimos para campaña', numero: true),
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text('El precio regular debe ser mayor al normal.',
+                  style: TextStyle(fontSize: 12, color: Colors.black54)),
+            ),
           ]),
         ),
         actions: [
@@ -108,7 +136,10 @@ class _PreciosScreenState extends State<PreciosScreen> {
             onPressed: () => Navigator.pop(context, {
               'categoria': categoria.text.trim(),
               'descripcion': descripcion.text.trim(),
-              'precio_dia': double.tryParse(precio.text.trim()) ?? 0,
+              'precio_regular': double.tryParse(regular.text.trim()) ?? 0,
+              'precio_normal': double.tryParse(normal.text.trim()) ?? 0,
+              'precio_campania': double.tryParse(campania.text.trim()) ?? 0,
+              'dias_min_campania': int.tryParse(diasMin.text.trim()) ?? 7,
             }),
             child: const Text('Guardar'),
           ),
