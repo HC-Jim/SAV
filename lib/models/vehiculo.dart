@@ -25,8 +25,8 @@ class Vehiculo {
   });
 
   factory Vehiculo.fromJson(Map<String, dynamic> json) => Vehiculo(
-        id: json['id'] as int,
-        placa: json['placa'] as String,
+        id: (json['id'] as int?) ?? 0,
+        placa: (json['placa'] as String?) ?? '',
         marca: json['marca'] as String?,
         modelo: json['modelo'] as String?,
         anio: json['anio'] as int?,

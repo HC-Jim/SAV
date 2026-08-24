@@ -28,7 +28,7 @@ class EstadoReserva {
 
 class Reserva {
   final int id;
-  final int vehiculoId;
+  final int? vehiculoId;
   final String? fechaInicio;
   final String? fechaFin;
   final String estado;
