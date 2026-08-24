@@ -28,6 +28,12 @@ class AlquilerService {
     return data.map((e) => Reserva.fromJson(e)).toList();
   }
 
+  /// Todas las reservas (gestión interna: Jefe, Cajero, Asesor).
+  Future<List<Reserva>> listarTodas() async {
+    final data = await _api.get('$_base/reservas/todas') as List;
+    return data.map((e) => Reserva.fromJson(e)).toList();
+  }
+
   Future<Reserva> verReserva(int id) async {
     final data = await _api.get('$_base/reservas/$id');
     return Reserva.fromJson(data);

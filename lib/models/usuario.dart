@@ -22,6 +22,9 @@ class Usuario {
   bool get esJefe => rol == 'JEFE_LOGISTICA';
   bool get esMecanico => rol == 'MECANICO';
   bool get esCliente => rol == 'CLIENTE';
+  bool get esAdministrador => rol == 'ADMINISTRADOR';
+  bool get esAsesor => rol == 'ASESOR_VENTAS';
+  bool get esCajero => rol == 'CAJERO';
 
   String get rolLegible {
     switch (rol) {
@@ -29,6 +32,12 @@ class Usuario {
         return 'Jefe de Logística';
       case 'MECANICO':
         return 'Mecánico';
+      case 'ADMINISTRADOR':
+        return 'Administrador';
+      case 'ASESOR_VENTAS':
+        return 'Asesor de Ventas';
+      case 'CAJERO':
+        return 'Cajero';
       case 'CLIENTE':
         return 'Cliente';
       default:

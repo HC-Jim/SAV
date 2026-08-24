@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/usuario.dart';
 import '../state/auth_controller.dart';
 import '../theme.dart';
 import 'cliente/catalogo_screen.dart';
@@ -7,6 +8,7 @@ import 'cliente/mis_reservas_screen.dart';
 import 'crear_orden_screen.dart';
 import 'gestion/clientes_admin_screen.dart';
 import 'gestion/precios_screen.dart';
+import 'gestion/reservas_internas_screen.dart';
 import 'gestion/seguros_screen.dart';
 import 'gestion/vehiculos_admin_screen.dart';
 import 'login_screen.dart';
@@ -22,11 +24,8 @@ class MenuScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthController>();
     final usuario = auth.usuario!;
-    final esJefe = usuario.esJefe;
 
-    final opciones = usuario.esCliente
-        ? _opcionesCliente()
-        : _opcionesStaff(esJefe);
+    final opciones = _opcionesPorRol(usuario);
 
     return Scaffold(
       appBar: AppBar(
@@ -99,41 +98,65 @@ class MenuScreen extends StatelessWidget {
     );
   }
 
-  List<_OpcionMenu> _opcionesStaff(bool esJefe) => [
-        _OpcionMenu(
-          'Órdenes de mantenimiento',
-          esJefe ? 'Revisar, autorizar y cerrar órdenes' : 'Órdenes asignadas y ejecución',
-          Icons.assignment_outlined,
-          () => const OrdenesListScreen(),
-        ),
-        if (esJefe)
-          _OpcionMenu('Vehículos por mantener', 'Revisar fechas y crear órdenes',
-              Icons.directions_car_outlined, () => const VehiculosScreen()),
-        if (esJefe)
-          _OpcionMenu('Crear orden de mantenimiento', 'Iniciar una nueva OM',
-              Icons.add_box_outlined, () => const CrearOrdenScreen()),
-        _OpcionMenu('Catálogo de repuestos', 'Stock y costos del almacén',
-            Icons.inventory_2_outlined, () => const RepuestosScreen()),
-        if (esJefe)
-          _OpcionMenu('Gestión de vehículos', 'Registrar y editar la flota',
-              Icons.garage_outlined, () => const VehiculosAdminScreen()),
-        if (esJefe)
-          _OpcionMenu('Gestión de clientes', 'Registrar y editar clientes',
-              Icons.people_outline, () => const ClientesAdminScreen()),
-        if (esJefe)
-          _OpcionMenu('Catálogo de precios', 'Tarifas por categoría de vehículo',
-              Icons.sell_outlined, () => const PreciosScreen()),
-        if (esJefe)
-          _OpcionMenu('Seguros y renovaciones', 'Registrar y renovar pólizas',
-              Icons.shield_outlined, () => const SegurosScreen()),
-      ];
+  // Opciones de menú según el rol del usuario (actor).
+  List<_OpcionMenu> _opcionesPorRol(Usuario usuario) {
+    // Reutilizables
+    final ordenes = _OpcionMenu('Órdenes de mantenimiento',
+        'Revisar, autorizar y cerrar órdenes', Icons.assignment_outlined,
+        () => const OrdenesListScreen());
+    final repuestos = _OpcionMenu('Catálogo de repuestos', 'Stock y costos del almacén',
+        Icons.inventory_2_outlined, () => const RepuestosScreen());
+    final catalogo = _OpcionMenu('Catálogo de vehículos', 'Buscar y reservar un vehículo',
+        Icons.directions_car_outlined, () => const CatalogoScreen());
+    final clientes = _OpcionMenu('Gestión de clientes', 'Registrar y editar clientes',
+        Icons.people_outline, () => const ClientesAdminScreen());
+    final reservasInternas = _OpcionMenu('Reservas', 'Ver todas las reservas',
+        Icons.event_note_outlined, () => const ReservasInternasScreen());
+    final gestionFlota = [
+      _OpcionMenu('Gestión de vehículos', 'Registrar y editar la flota',
+          Icons.garage_outlined, () => const VehiculosAdminScreen()),
+      _OpcionMenu('Catálogo de precios', 'Tarifas por categoría de vehículo',
+          Icons.sell_outlined, () => const PreciosScreen()),
+      _OpcionMenu('Seguros y renovaciones', 'Registrar y renovar pólizas',
+          Icons.shield_outlined, () => const SegurosScreen()),
+    ];
 
-  List<_OpcionMenu> _opcionesCliente() => [
-        _OpcionMenu('Catálogo de vehículos', 'Buscar y reservar un vehículo',
-            Icons.directions_car_outlined, () => const CatalogoScreen()),
+    if (usuario.esCliente) {
+      return [
+        catalogo,
         _OpcionMenu('Mis reservas', 'Pagar, cancelar y ver mis reservas',
-            Icons.event_note_outlined, () => const MisReservasScreen()),
+            Icons.receipt_long_outlined, () => const MisReservasScreen()),
       ];
+    }
+    if (usuario.esMecanico) {
+      return [
+        _OpcionMenu('Órdenes de mantenimiento', 'Órdenes asignadas y ejecución',
+            Icons.assignment_outlined, () => const OrdenesListScreen()),
+        repuestos,
+      ];
+    }
+    if (usuario.esAdministrador) {
+      return [clientes, ...gestionFlota];
+    }
+    if (usuario.esAsesor) {
+      return [catalogo, clientes, reservasInternas];
+    }
+    if (usuario.esCajero) {
+      return [reservasInternas];
+    }
+    // Jefe de Logística (por defecto): todo lo operativo + gestión.
+    return [
+      ordenes,
+      _OpcionMenu('Vehículos por mantener', 'Revisar fechas y crear órdenes',
+          Icons.directions_car_outlined, () => const VehiculosScreen()),
+      _OpcionMenu('Crear orden de mantenimiento', 'Iniciar una nueva OM',
+          Icons.add_box_outlined, () => const CrearOrdenScreen()),
+      repuestos,
+      clientes,
+      ...gestionFlota,
+      reservasInternas,
+    ];
+  }
 }
 
 class _OpcionMenu {
