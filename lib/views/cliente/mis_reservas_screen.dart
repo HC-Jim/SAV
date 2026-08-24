@@ -34,7 +34,7 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.mensaje), backgroundColor: Colors.red));
+          .showSnackBar(SnackBar(content: Text(e.mensaje), backgroundColor: Colors.black));
     } finally {
       if (mounted) setState(() => _procesando = false);
     }

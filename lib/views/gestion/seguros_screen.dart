@@ -73,17 +73,14 @@ class _SegurosScreenState extends State<SegurosScreen> {
     final vencido = dias != null && dias < 0;
     final proximo = dias != null && dias >= 0 && dias <= 30;
     String etiqueta;
-    Color color;
     if (vencido) {
       etiqueta = 'Vencida hace ${-dias} días';
-      color = Colors.red;
     } else if (proximo) {
       etiqueta = 'Vence en $dias días';
-      color = Colors.orange;
     } else {
       etiqueta = dias != null ? 'Vence en $dias días' : 'Sin fecha';
-      color = Colors.green;
     }
+    final color = vencido ? Colors.black : Colors.black54;
     return Card(
       child: ListTile(
         leading: Icon(Icons.shield_outlined, color: color),

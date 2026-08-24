@@ -48,15 +48,14 @@ class MenuScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           Card(
-            color: AppTheme.primario,
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
                 children: [
                   const CircleAvatar(
                     radius: 26,
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.person, color: AppTheme.primario, size: 30),
+                    backgroundColor: Colors.black12,
+                    child: Icon(Icons.person, color: Colors.black, size: 30),
                   ),
                   const SizedBox(width: 16),
                   Column(
@@ -64,11 +63,11 @@ class MenuScreen extends StatelessWidget {
                     children: [
                       Text(usuario.nombre,
                           style: const TextStyle(
-                              color: Colors.white,
+                              color: Colors.black,
                               fontSize: 18,
                               fontWeight: FontWeight.bold)),
                       Text(usuario.rolLegible,
-                          style: const TextStyle(color: Colors.white70)),
+                          style: const TextStyle(color: Colors.black54)),
                     ],
                   ),
                 ],

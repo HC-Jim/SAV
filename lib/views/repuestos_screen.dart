@@ -45,10 +45,9 @@ class _RepuestosScreenState extends State<RepuestosScreen> {
                   subtitle: Text('Ref: ${r.referencia ?? '-'}  ·  '
                       'S/ ${r.costoUnitario.toStringAsFixed(2)}'),
                   trailing: Chip(
-                    label: Text('Stock: ${r.stock}'),
-                    backgroundColor: sinStock
-                        ? Colors.red.withValues(alpha: 0.15)
-                        : Colors.green.withValues(alpha: 0.15),
+                    label: Text(sinStock ? 'Sin stock' : 'Stock: ${r.stock}'),
+                    backgroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.black26),
                   ),
                 ),
               );

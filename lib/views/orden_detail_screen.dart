@@ -48,7 +48,7 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.mensaje), backgroundColor: Colors.red));
+          .showSnackBar(SnackBar(content: Text(e.mensaje), backgroundColor: Colors.black));
     } finally {
       if (mounted) setState(() => _procesando = false);
     }
@@ -356,8 +356,8 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
     if (peligro) {
       return OutlinedButton.icon(
         onPressed: _procesando ? null : onTap,
-        icon: Icon(icono, color: Colors.red),
-        label: Text(texto, style: const TextStyle(color: Colors.red)),
+        icon: Icon(icono, color: Colors.black),
+        label: Text(texto, style: const TextStyle(color: Colors.black)),
       );
     }
     if (tonal) {

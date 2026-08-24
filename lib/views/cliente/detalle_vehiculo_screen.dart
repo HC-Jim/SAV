@@ -136,7 +136,9 @@ class _DetalleVehiculoScreenState extends State<DetalleVehiculoScreen> {
           if (_mensajeDisp != null) ...[
             const SizedBox(height: 12),
             Text(_mensajeDisp!,
-                style: TextStyle(color: _disponible ? Colors.green : Colors.red)),
+                style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: _disponible ? FontWeight.bold : FontWeight.normal)),
           ],
           const SizedBox(height: 12),
           FilledButton(

@@ -1,22 +1,36 @@
 import 'package:flutter/material.dart';
-import 'models/orden_mantenimiento.dart';
 
-/// Tema visual de la aplicacion (AutoRent Perú).
+/// Tema visual básico en blanco y negro (fondo blanco, texto/bordes negros).
 class AppTheme {
-  static const Color primario = Color(0xFF1565C0);
+  static const Color primario = Colors.black;
 
   static ThemeData get theme => ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: primario),
-        scaffoldBackgroundColor: const Color(0xFFF5F7FA),
+        brightness: Brightness.light,
+        colorScheme: const ColorScheme.light(
+          primary: Colors.black,
+          onPrimary: Colors.white,
+          secondary: Colors.black,
+          onSecondary: Colors.white,
+          surface: Colors.white,
+          onSurface: Colors.black,
+        ),
+        scaffoldBackgroundColor: Colors.white,
         appBarTheme: const AppBarTheme(
-          backgroundColor: primario,
-          foregroundColor: Colors.white,
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          surfaceTintColor: Colors.white,
           elevation: 0,
+          scrolledUnderElevation: 0,
         ),
         cardTheme: CardThemeData(
-          elevation: 1,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 0,
+          color: Colors.white,
+          surfaceTintColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            side: const BorderSide(color: Colors.black26),
+            borderRadius: BorderRadius.circular(6),
+          ),
         ),
         inputDecorationTheme: const InputDecorationTheme(
           border: OutlineInputBorder(),
@@ -24,36 +38,28 @@ class AppTheme {
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
           ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.black,
+            side: const BorderSide(color: Colors.black),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          ),
+        ),
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(foregroundColor: Colors.black),
+        ),
+        floatingActionButtonTheme: const FloatingActionButtonThemeData(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
         ),
       );
 }
 
-/// Color asociado a cada estado de la orden (para chips y badges).
-Color colorEstado(String estado) {
-  switch (estado) {
-    case EstadoOrden.pendienteInspeccion:
-      return Colors.blueGrey;
-    case EstadoOrden.inspeccionCompleta:
-    case EstadoOrden.inspeccionPostergada:
-      return Colors.indigo;
-    case EstadoOrden.pendienteAutorizacion:
-      return Colors.orange;
-    case EstadoOrden.presupuestoAutorizado:
-      return Colors.teal;
-    case EstadoOrden.enMantenimiento:
-      return Colors.purple;
-    case EstadoOrden.pendienteConformidad:
-      return Colors.amber.shade800;
-    case EstadoOrden.correccionRequerida:
-      return Colors.deepOrange;
-    case EstadoOrden.cerrado:
-      return Colors.green;
-    case EstadoOrden.cerradaPorRechazo:
-      return Colors.red;
-    default:
-      return Colors.grey;
-  }
-}
+/// En modo blanco y negro todos los estados usan el mismo tono.
+Color colorEstado(String estado) => Colors.black87;
