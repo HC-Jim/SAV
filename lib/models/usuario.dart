@@ -21,6 +21,18 @@ class Usuario {
 
   bool get esJefe => rol == 'JEFE_LOGISTICA';
   bool get esMecanico => rol == 'MECANICO';
+  bool get esCliente => rol == 'CLIENTE';
 
-  String get rolLegible => esJefe ? 'Jefe de Logística' : 'Mecánico';
+  String get rolLegible {
+    switch (rol) {
+      case 'JEFE_LOGISTICA':
+        return 'Jefe de Logística';
+      case 'MECANICO':
+        return 'Mecánico';
+      case 'CLIENTE':
+        return 'Cliente';
+      default:
+        return rol;
+    }
+  }
 }

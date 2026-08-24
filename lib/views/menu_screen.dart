@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../state/auth_controller.dart';
 import '../theme.dart';
+import 'cliente/catalogo_screen.dart';
+import 'cliente/mis_reservas_screen.dart';
 import 'crear_orden_screen.dart';
 import 'login_screen.dart';
 import 'ordenes_list_screen.dart';
@@ -18,34 +20,9 @@ class MenuScreen extends StatelessWidget {
     final usuario = auth.usuario!;
     final esJefe = usuario.esJefe;
 
-    final opciones = <_OpcionMenu>[
-      _OpcionMenu(
-        'Órdenes de mantenimiento',
-        esJefe ? 'Revisar, autorizar y cerrar órdenes' : 'Órdenes asignadas y ejecución',
-        Icons.assignment_outlined,
-        () => const OrdenesListScreen(),
-      ),
-      if (esJefe)
-        _OpcionMenu(
-          'Vehículos por mantener',
-          'Revisar fechas y crear órdenes',
-          Icons.directions_car_outlined,
-          () => const VehiculosScreen(),
-        ),
-      if (esJefe)
-        _OpcionMenu(
-          'Crear orden de mantenimiento',
-          'Iniciar una nueva OM',
-          Icons.add_box_outlined,
-          () => const CrearOrdenScreen(),
-        ),
-      _OpcionMenu(
-        'Catálogo de repuestos',
-        'Stock y costos del almacén',
-        Icons.inventory_2_outlined,
-        () => const RepuestosScreen(),
-      ),
-    ];
+    final opciones = usuario.esCliente
+        ? _opcionesCliente()
+        : _opcionesStaff(esJefe);
 
     return Scaffold(
       appBar: AppBar(
@@ -117,6 +94,30 @@ class MenuScreen extends StatelessWidget {
       ),
     );
   }
+
+  List<_OpcionMenu> _opcionesStaff(bool esJefe) => [
+        _OpcionMenu(
+          'Órdenes de mantenimiento',
+          esJefe ? 'Revisar, autorizar y cerrar órdenes' : 'Órdenes asignadas y ejecución',
+          Icons.assignment_outlined,
+          () => const OrdenesListScreen(),
+        ),
+        if (esJefe)
+          _OpcionMenu('Vehículos por mantener', 'Revisar fechas y crear órdenes',
+              Icons.directions_car_outlined, () => const VehiculosScreen()),
+        if (esJefe)
+          _OpcionMenu('Crear orden de mantenimiento', 'Iniciar una nueva OM',
+              Icons.add_box_outlined, () => const CrearOrdenScreen()),
+        _OpcionMenu('Catálogo de repuestos', 'Stock y costos del almacén',
+            Icons.inventory_2_outlined, () => const RepuestosScreen()),
+      ];
+
+  List<_OpcionMenu> _opcionesCliente() => [
+        _OpcionMenu('Catálogo de vehículos', 'Buscar y reservar un vehículo',
+            Icons.directions_car_outlined, () => const CatalogoScreen()),
+        _OpcionMenu('Mis reservas', 'Pagar, cancelar y ver mis reservas',
+            Icons.event_note_outlined, () => const MisReservasScreen()),
+      ];
 }
 
 class _OpcionMenu {
