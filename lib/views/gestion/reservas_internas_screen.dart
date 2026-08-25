@@ -43,20 +43,112 @@ class _ReservasInternasScreenState extends State<ReservasInternasScreen> {
     }
   }
 
-  Future<void> _confirmarCancelar(Reserva r) async {
+  /// Gestionar Cancelación (Cajero): aplica la regla de 48 h y emite comprobante.
+  Future<void> _gestionarCancelacion(Reserva r) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Cancelar reserva'),
+        title: const Text('Gestionar cancelación'),
         content: const Text(
-            'Se aplicará penalidad si faltan menos de 48 h para el inicio. ¿Confirmar?'),
+            'Se aplicará penalidad si faltan menos de 48 h para el inicio, '
+            'se devolverá la garantía restante y se emitirá el comprobante. ¿Confirmar?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Volver')),
           FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirmar')),
         ],
       ),
     );
-    if (ok == true) _ejecutar(() => _svc.cancelar(r.id));
+    if (ok == true) _ejecutar(() => _svc.gestionarCancelacion(r.id));
+  }
+
+  /// Devolver Garantía (Cajero): permite registrar deducciones por daños.
+  Future<void> _devolverGarantia(Reserva r) async {
+    final ded = TextEditingController(text: '0');
+    final datos = await showDialog<double>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Devolver garantía'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Garantía retenida: S/ ${r.garantiaMonto.toStringAsFixed(2)}'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: ded,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Deducciones por daños (S/)'),
+            ),
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text('Se devuelve la garantía menos las deducciones y se emite el comprobante.',
+                  style: TextStyle(fontSize: 12, color: Colors.black54)),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, double.tryParse(ded.text.trim()) ?? 0),
+            child: const Text('Devolver'),
+          ),
+        ],
+      ),
+    );
+    if (datos != null) _ejecutar(() => _svc.devolverGarantia(r.id, deducciones: datos));
+  }
+
+  /// Emitir Comprobante (Cajero) del pago de alquiler.
+  Future<void> _emitirComprobante(Reserva r) async {
+    setState(() => _procesando = true);
+    try {
+      await _svc.emitirComprobante(r.id);
+      await _verComprobantes(r, recargar: false);
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Comprobante emitido')));
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.mensaje), backgroundColor: Colors.black));
+      }
+    } finally {
+      if (mounted) setState(() => _procesando = false);
+    }
+  }
+
+  Future<void> _verComprobantes(Reserva r, {bool recargar = true}) async {
+    if (recargar) setState(() => _procesando = true);
+    try {
+      final lista = await _svc.comprobantes(r.id);
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text('Comprobantes · Reserva #${r.id}'),
+          content: lista.isEmpty
+              ? const Text('Sin comprobantes.')
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: lista
+                      .map((c) => Text(
+                          '• ${c['tipo'] ?? 'BOLETA'} — S/ ${((c['monto_total'] as num?) ?? 0).toStringAsFixed(2)}'))
+                      .toList(),
+                ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
+          ],
+        ),
+      );
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.mensaje), backgroundColor: Colors.black));
+      }
+    } finally {
+      if (recargar && mounted) setState(() => _procesando = false);
+    }
   }
 
   @override
@@ -117,7 +209,7 @@ class _ReservasInternasScreenState extends State<ReservasInternasScreen> {
                 'Garantía: S/ ${r.garantiaMonto.toStringAsFixed(2)}'),
             if (r.penalidad > 0) Text('Penalidad: S/ ${r.penalidad.toStringAsFixed(2)}'),
             if (r.montoDevuelto > 0) Text('Devuelto: S/ ${r.montoDevuelto.toStringAsFixed(2)}'),
-            if (esCajero && !r.esFinal) ...[
+            if (esCajero) ...[
               const SizedBox(height: 10),
               Wrap(spacing: 8, runSpacing: 8, children: _accionesCajero(r)),
             ],
@@ -129,14 +221,41 @@ class _ReservasInternasScreenState extends State<ReservasInternasScreen> {
 
   List<Widget> _accionesCajero(Reserva r) {
     final acciones = <Widget>[];
+    final off = _procesando;
+
     if (r.estado == EstadoReserva.confirmada) {
       acciones.add(FilledButton(
-        onPressed: _procesando ? null : () => _ejecutar(() => _svc.pagarAlquiler(r.id)),
-        child: const Text('Registrar pago y devolución'),
+        onPressed: off ? null : () => _ejecutar(() => _svc.pagarAlquiler(r.id)),
+        child: const Text('Registrar pago de alquiler'),
       ));
       acciones.add(OutlinedButton(
-        onPressed: _procesando ? null : () => _confirmarCancelar(r),
-        child: const Text('Cancelar'),
+        onPressed: off ? null : () => _gestionarCancelacion(r),
+        child: const Text('Gestionar cancelación'),
+      ));
+    } else if (r.estado == EstadoReserva.enCurso) {
+      acciones.add(FilledButton(
+        onPressed: off ? null : () => _devolverGarantia(r),
+        child: const Text('Devolver garantía'),
+      ));
+      acciones.add(OutlinedButton(
+        onPressed: off ? null : () => _emitirComprobante(r),
+        child: const Text('Emitir comprobante'),
+      ));
+      acciones.add(OutlinedButton(
+        onPressed: off ? null : () => _gestionarCancelacion(r),
+        child: const Text('Gestionar cancelación'),
+      ));
+    } else {
+      // FINALIZADA / CANCELADA: solo consulta/emisión de comprobantes.
+      if (r.estado == EstadoReserva.finalizada) {
+        acciones.add(OutlinedButton(
+          onPressed: off ? null : () => _emitirComprobante(r),
+          child: const Text('Emitir comprobante'),
+        ));
+      }
+      acciones.add(TextButton(
+        onPressed: off ? null : () => _verComprobantes(r),
+        child: const Text('Ver comprobantes'),
       ));
     }
     return acciones;

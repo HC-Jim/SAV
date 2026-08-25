@@ -44,4 +44,25 @@ class AlquilerService {
 
   Future<void> cancelar(int reservaId, {String? motivo}) =>
       _api.patch('$_base/reservas/$reservaId/cancelar', {'motivo': motivo});
+
+  // ---------- Acciones del Cajero ----------
+
+  /// Devolver Garantía (Cajero): EN_CURSO → FINALIZADA, con deducciones opcionales.
+  Future<void> devolverGarantia(int reservaId,
+          {double deducciones = 0, String metodo = 'TARJETA'}) =>
+      _api.patch('$_base/reservas/$reservaId/devolver-garantia',
+          {'deducciones': deducciones, 'metodo': metodo});
+
+  /// Gestionar Cancelación (Cajero): aplica regla 48h y emite comprobante.
+  Future<void> gestionarCancelacion(int reservaId, {String? motivo}) =>
+      _api.patch('$_base/reservas/$reservaId/gestionar-cancelacion', {'motivo': motivo});
+
+  /// Emitir Comprobante (Cajero) del pago de alquiler.
+  Future<Map<String, dynamic>> emitirComprobante(int reservaId) async =>
+      await _api.post('$_base/reservas/$reservaId/emitir-comprobante')
+          as Map<String, dynamic>;
+
+  /// Comprobantes de una reserva (Cajero).
+  Future<List<dynamic>> comprobantes(int reservaId) async =>
+      await _api.get('$_base/reservas/$reservaId/comprobantes') as List;
 }
