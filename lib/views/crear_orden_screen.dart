@@ -34,16 +34,13 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
   }
 
   Future<void> _cargarDatos() async {
-    final res = await Future.wait([
-      _svc.vehiculosPorMantener(),
-      _svc.listarMecanicos(),
-    ]);
-    _vehiculos = res[0] as List<Vehiculo>;
-    _mecanicos = res[1] as List<Usuario>;
-    // Asegura que el vehículo preseleccionado esté en la lista.
-    if (widget.vehiculoPreseleccionado != null &&
-        !_vehiculos.any((v) => v.id == _vehiculoId)) {
-      _vehiculos = [widget.vehiculoPreseleccionado!, ..._vehiculos];
+    _mecanicos = await _svc.listarMecanicos();
+    // El vehículo llega preseleccionado desde "Buscar Vehículo"; si no,
+    // se ofrece la lista de vehículos por mantener (compatibilidad).
+    if (widget.vehiculoPreseleccionado != null) {
+      _vehiculos = [widget.vehiculoPreseleccionado!];
+    } else {
+      _vehiculos = await _svc.vehiculosPorMantener();
     }
   }
 
@@ -98,19 +95,30 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                DropdownButtonFormField<int>(
-                  initialValue: _vehiculoId,
-                  decoration: const InputDecoration(
-                    labelText: 'Vehículo *',
-                    prefixIcon: Icon(Icons.directions_car),
+                if (widget.vehiculoPreseleccionado != null)
+                  // Vehículo ya elegido en "Buscar Vehículo": campo fijo.
+                  InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Vehículo',
+                      prefixIcon: Icon(Icons.directions_car),
+                    ),
+                    child: Text(widget.vehiculoPreseleccionado!.descripcion,
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                  )
+                else
+                  DropdownButtonFormField<int>(
+                    initialValue: _vehiculoId,
+                    decoration: const InputDecoration(
+                      labelText: 'Vehículo *',
+                      prefixIcon: Icon(Icons.directions_car),
+                    ),
+                    items: _vehiculos
+                        .map((v) => DropdownMenuItem(
+                            value: v.id, child: Text(v.descripcion)))
+                        .toList(),
+                    onChanged: (v) => setState(() => _vehiculoId = v),
+                    validator: (v) => v == null ? 'Selecciona un vehículo' : null,
                   ),
-                  items: _vehiculos
-                      .map((v) => DropdownMenuItem(
-                          value: v.id, child: Text(v.descripcion)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _vehiculoId = v),
-                  validator: (v) => v == null ? 'Selecciona un vehículo' : null,
-                ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<int>(
                   initialValue: _mecanicoId,

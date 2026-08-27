@@ -7,7 +7,7 @@ import 'asesor/cotizaciones_screen.dart';
 import 'cliente/catalogo_screen.dart';
 import 'cliente/mis_cotizaciones_screen.dart';
 import 'cliente/mis_reservas_screen.dart';
-import 'crear_orden_screen.dart';
+import 'buscar_vehiculo_screen.dart';
 import 'gestion/clientes_admin_screen.dart';
 import 'gestion/precios_screen.dart';
 import 'gestion/reservas_internas_screen.dart';
@@ -16,7 +16,6 @@ import 'gestion/vehiculos_admin_screen.dart';
 import 'login_screen.dart';
 import 'ordenes_list_screen.dart';
 import 'repuestos_screen.dart';
-import 'vehiculos_screen.dart';
 
 /// Menú principal. Muestra opciones según el rol del usuario.
 class MenuScreen extends StatelessWidget {
@@ -102,9 +101,6 @@ class MenuScreen extends StatelessWidget {
   // Opciones de menú según el rol del usuario (actor).
   List<_OpcionMenu> _opcionesPorRol(Usuario usuario) {
     // Reutilizables
-    final ordenes = _OpcionMenu('Órdenes de mantenimiento',
-        'Revisar, autorizar y cerrar órdenes', Icons.assignment_outlined,
-        () => const OrdenesListScreen());
     final repuestos = _OpcionMenu('Catálogo de repuestos', 'Stock y costos del almacén',
         Icons.inventory_2_outlined, () => const RepuestosScreen());
     final catalogo = _OpcionMenu('Catálogo de vehículos', 'Consultar vehículos y disponibilidad',
@@ -151,11 +147,12 @@ class MenuScreen extends StatelessWidget {
     }
     // Jefe de Logística: mantenimiento + consulta de reservas.
     return [
-      ordenes,
-      _OpcionMenu('Vehículos por mantener', 'Revisar flota y crear órdenes',
-          Icons.directions_car_outlined, () => const VehiculosScreen()),
-      _OpcionMenu('Crear orden de mantenimiento', 'Iniciar una nueva OM',
-          Icons.add_box_outlined, () => const CrearOrdenScreen()),
+      _OpcionMenu('Órdenes de mantenimiento', 'Elige un vehículo y ve su estado y órdenes',
+          Icons.assignment_outlined,
+          () => const BuscarVehiculoScreen(modo: ModoVehiculo.verEstado)),
+      _OpcionMenu('Crear orden de mantenimiento', 'Elige un vehículo e inicia una OM',
+          Icons.add_box_outlined,
+          () => const BuscarVehiculoScreen(modo: ModoVehiculo.crearOrden)),
       repuestos,
       reservasInternas,
     ];
