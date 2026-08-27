@@ -4,6 +4,7 @@ import '../../models/reserva.dart';
 import '../../services/alquiler_service.dart';
 import '../../services/api_client.dart';
 import '../../state/auth_controller.dart';
+import '../../widgets/visor_comprobantes.dart';
 
 /// Vista interna de todas las reservas.
 /// El Cajero además puede procesar pagos, devolución y cancelaciones.
@@ -102,7 +103,9 @@ class _ReservasInternasScreenState extends State<ReservasInternasScreen> {
     setState(() => _procesando = true);
     try {
       await _svc.emitirComprobante(r.id);
-      await _verComprobantes(r, recargar: false);
+      if (mounted) {
+        await VisorComprobantes.abrir(context, reservaId: r.id);
+      }
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('Comprobante emitido')));
@@ -114,40 +117,6 @@ class _ReservasInternasScreenState extends State<ReservasInternasScreen> {
       }
     } finally {
       if (mounted) setState(() => _procesando = false);
-    }
-  }
-
-  Future<void> _verComprobantes(Reserva r, {bool recargar = true}) async {
-    if (recargar) setState(() => _procesando = true);
-    try {
-      final lista = await _svc.comprobantes(r.id);
-      if (!mounted) return;
-      await showDialog<void>(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: Text('Comprobantes · Reserva #${r.id}'),
-          content: lista.isEmpty
-              ? const Text('Sin comprobantes.')
-              : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: lista
-                      .map((c) => Text(
-                          '• ${c['tipo'] ?? 'BOLETA'} — S/ ${((c['monto_total'] as num?) ?? 0).toStringAsFixed(2)}'))
-                      .toList(),
-                ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cerrar')),
-          ],
-        ),
-      );
-    } on ApiException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.mensaje), backgroundColor: Colors.black));
-      }
-    } finally {
-      if (recargar && mounted) setState(() => _procesando = false);
     }
   }
 
@@ -254,7 +223,7 @@ class _ReservasInternasScreenState extends State<ReservasInternasScreen> {
         ));
       }
       acciones.add(TextButton(
-        onPressed: off ? null : () => _verComprobantes(r),
+        onPressed: off ? null : () => VisorComprobantes.abrir(context, reservaId: r.id),
         child: const Text('Ver comprobantes'),
       ));
     }

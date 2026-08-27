@@ -3,8 +3,8 @@ import '../../models/cliente.dart';
 import '../../models/cotizacion.dart';
 import '../../models/vehiculo.dart';
 import '../../services/api_client.dart';
-import '../../services/gestion_service.dart';
 import '../../services/ventas_service.dart';
+import '../../widgets/selector_cliente.dart';
 import '../../widgets/selector_vehiculo.dart';
 
 /// Cotizaciones (Asesor de Ventas): generar, solicitar garantía y generar orden de reserva.
@@ -16,7 +16,6 @@ class CotizacionesScreen extends StatefulWidget {
 
 class _CotizacionesScreenState extends State<CotizacionesScreen> {
   final _svc = VentasService();
-  final _gestion = GestionService();
   late Future<List<Cotizacion>> _futuro;
   bool _procesando = false;
 
@@ -128,17 +127,7 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
   }
 
   Future<void> _abrirForm() async {
-    List<Cliente> clientes = [];
-    try {
-      clientes = await _gestion.listarClientes();
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.mensaje)));
-      return;
-    }
-    if (!mounted) return;
-
-    int? clienteId = clientes.isNotEmpty ? clientes.first.id : null;
+    Cliente? clienteSel;
     Vehiculo? vehiculoSel;
     DateTime? inicio;
     DateTime? fin;
@@ -152,14 +141,9 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
           title: const Text('Nueva cotización'),
           content: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              DropdownButtonFormField<int>(
-                initialValue: clienteId,
-                decoration: const InputDecoration(labelText: 'Cliente'),
-                items: clientes
-                    .map((c) => DropdownMenuItem(
-                        value: c.id, child: Text(c.razonSocial ?? c.numeroDocumento)))
-                    .toList(),
-                onChanged: (v) => setLocal(() => clienteId = v),
+              SelectorCliente(
+                value: clienteSel,
+                onChanged: (c) => setLocal(() => clienteSel = c),
               ),
               const SizedBox(height: 10),
               SelectorVehiculo(
@@ -209,9 +193,9 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
       ),
     );
 
-    if (ok == true && clienteId != null && vehiculoSel != null && inicio != null && fin != null) {
+    if (ok == true && clienteSel != null && vehiculoSel != null && inicio != null && fin != null) {
       _ejecutar(() => _svc.generar(
-            clienteId: clienteId!,
+            clienteId: clienteSel!.id,
             vehiculoId: vehiculoSel!.id,
             fechaInicio: fmt(inicio!),
             fechaFin: fmt(fin!),
