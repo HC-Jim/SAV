@@ -8,6 +8,7 @@ import 'cliente/catalogo_screen.dart';
 import 'cliente/mis_cotizaciones_screen.dart';
 import 'cliente/mis_reservas_screen.dart';
 import 'buscar_vehiculo_screen.dart';
+import 'crear_orden_screen.dart';
 import 'gestion/clientes_admin_screen.dart';
 import 'gestion/precios_screen.dart';
 import 'gestion/reservas_internas_screen.dart';
@@ -150,9 +151,8 @@ class MenuScreen extends StatelessWidget {
       _OpcionMenu('Órdenes de mantenimiento', 'Elige un vehículo y ve su estado y órdenes',
           Icons.assignment_outlined,
           () => const BuscarVehiculoScreen(modo: ModoVehiculo.verEstado)),
-      _OpcionMenu('Crear orden de mantenimiento', 'Elige un vehículo e inicia una OM',
-          Icons.add_box_outlined,
-          () => const BuscarVehiculoScreen(modo: ModoVehiculo.crearOrden)),
+      _OpcionMenu('Crear orden de mantenimiento', 'Buscar vehículo e iniciar una OM',
+          Icons.add_box_outlined, () => const CrearOrdenScreen()),
       repuestos,
       reservasInternas,
     ];

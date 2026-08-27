@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import '../../models/cliente.dart';
 import '../../models/cotizacion.dart';
 import '../../models/vehiculo.dart';
-import '../../services/alquiler_service.dart';
 import '../../services/api_client.dart';
 import '../../services/gestion_service.dart';
 import '../../services/ventas_service.dart';
+import '../../widgets/selector_vehiculo.dart';
 
 /// Cotizaciones (Asesor de Ventas): generar, solicitar garantía y generar orden de reserva.
 class CotizacionesScreen extends StatefulWidget {
@@ -17,7 +17,6 @@ class CotizacionesScreen extends StatefulWidget {
 class _CotizacionesScreenState extends State<CotizacionesScreen> {
   final _svc = VentasService();
   final _gestion = GestionService();
-  final _alquiler = AlquilerService();
   late Future<List<Cotizacion>> _futuro;
   bool _procesando = false;
 
@@ -130,10 +129,8 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
 
   Future<void> _abrirForm() async {
     List<Cliente> clientes = [];
-    List<Vehiculo> vehiculos = [];
     try {
       clientes = await _gestion.listarClientes();
-      vehiculos = await _alquiler.catalogo(soloDisponibles: true);
     } on ApiException catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.mensaje)));
@@ -142,7 +139,7 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
     if (!mounted) return;
 
     int? clienteId = clientes.isNotEmpty ? clientes.first.id : null;
-    int? vehiculoId = vehiculos.isNotEmpty ? vehiculos.first.id : null;
+    Vehiculo? vehiculoSel;
     DateTime? inicio;
     DateTime? fin;
     String fmt(DateTime d) =>
@@ -165,14 +162,10 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
                 onChanged: (v) => setLocal(() => clienteId = v),
               ),
               const SizedBox(height: 10),
-              DropdownButtonFormField<int>(
-                initialValue: vehiculoId,
-                decoration: const InputDecoration(labelText: 'Vehículo'),
-                items: vehiculos
-                    .map((v) => DropdownMenuItem(
-                        value: v.id, child: Text('${v.placa} ${v.marca ?? ''}')))
-                    .toList(),
-                onChanged: (v) => setLocal(() => vehiculoId = v),
+              SelectorVehiculo(
+                value: vehiculoSel,
+                soloDisponibles: true,
+                onChanged: (v) => setLocal(() => vehiculoSel = v),
               ),
               const SizedBox(height: 10),
               Row(children: [
@@ -216,10 +209,10 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
       ),
     );
 
-    if (ok == true && clienteId != null && vehiculoId != null && inicio != null && fin != null) {
+    if (ok == true && clienteId != null && vehiculoSel != null && inicio != null && fin != null) {
       _ejecutar(() => _svc.generar(
             clienteId: clienteId!,
-            vehiculoId: vehiculoId!,
+            vehiculoId: vehiculoSel!.id,
             fechaInicio: fmt(inicio!),
             fechaFin: fmt(fin!),
           ));

@@ -3,6 +3,7 @@ import '../models/usuario.dart';
 import '../models/vehiculo.dart';
 import '../services/api_client.dart';
 import '../services/mantenimiento_service.dart';
+import '../widgets/selector_vehiculo.dart';
 
 /// Formulario del Jefe de Logística para crear una Orden de Mantenimiento.
 class CrearOrdenScreen extends StatefulWidget {
@@ -20,28 +21,22 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
   final _descCtrl = TextEditingController();
 
   late Future<void> _carga;
-  List<Vehiculo> _vehiculos = [];
   List<Usuario> _mecanicos = [];
-  int? _vehiculoId;
+  Vehiculo? _vehiculo;
   int? _mecanicoId;
   bool _guardando = false;
 
   @override
   void initState() {
     super.initState();
-    _vehiculoId = widget.vehiculoPreseleccionado?.id;
+    _vehiculo = widget.vehiculoPreseleccionado;
     _carga = _cargarDatos();
   }
 
   Future<void> _cargarDatos() async {
+    // El vehículo se elige con el SelectorVehiculo («include» Buscar Vehículo);
+    // aquí solo hace falta la lista de mecánicos.
     _mecanicos = await _svc.listarMecanicos();
-    // El vehículo llega preseleccionado desde "Buscar Vehículo"; si no,
-    // se ofrece la lista de vehículos por mantener (compatibilidad).
-    if (widget.vehiculoPreseleccionado != null) {
-      _vehiculos = [widget.vehiculoPreseleccionado!];
-    } else {
-      _vehiculos = await _svc.vehiculosPorMantener();
-    }
   }
 
   @override
@@ -52,8 +47,8 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
   }
 
   Future<void> _guardar() async {
-    if (!_formKey.currentState!.validate() || _vehiculoId == null) {
-      if (_vehiculoId == null) {
+    if (!_formKey.currentState!.validate() || _vehiculo == null) {
+      if (_vehiculo == null) {
         ScaffoldMessenger.of(context)
             .showSnackBar(const SnackBar(content: Text('Selecciona un vehículo')));
       }
@@ -62,7 +57,7 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
     setState(() => _guardando = true);
     try {
       await _svc.crearOrden(
-        vehiculoId: _vehiculoId!,
+        vehiculoId: _vehiculo!.id,
         mecanicoId: _mecanicoId,
         tipoServicio: _tipoCtrl.text.trim(),
         descripcion: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
@@ -95,30 +90,12 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                if (widget.vehiculoPreseleccionado != null)
-                  // Vehículo ya elegido en "Buscar Vehículo": campo fijo.
-                  InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Vehículo',
-                      prefixIcon: Icon(Icons.directions_car),
-                    ),
-                    child: Text(widget.vehiculoPreseleccionado!.descripcion,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
-                  )
-                else
-                  DropdownButtonFormField<int>(
-                    initialValue: _vehiculoId,
-                    decoration: const InputDecoration(
-                      labelText: 'Vehículo *',
-                      prefixIcon: Icon(Icons.directions_car),
-                    ),
-                    items: _vehiculos
-                        .map((v) => DropdownMenuItem(
-                            value: v.id, child: Text(v.descripcion)))
-                        .toList(),
-                    onChanged: (v) => setState(() => _vehiculoId = v),
-                    validator: (v) => v == null ? 'Selecciona un vehículo' : null,
-                  ),
+                SelectorVehiculo(
+                  value: _vehiculo,
+                  soloDisponibles: true,
+                  label: 'Vehículo *',
+                  onChanged: (v) => setState(() => _vehiculo = v),
+                ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<int>(
                   initialValue: _mecanicoId,

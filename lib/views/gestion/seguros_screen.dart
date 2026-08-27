@@ -3,6 +3,7 @@ import '../../models/seguro.dart';
 import '../../models/vehiculo.dart';
 import '../../services/api_client.dart';
 import '../../services/gestion_service.dart';
+import '../../widgets/selector_vehiculo.dart';
 
 /// Registrar Pólizas / Seguros + alerta de vencimiento (CUS017 / CUS018).
 class SegurosScreen extends StatefulWidget {
@@ -137,16 +138,7 @@ class _SegurosScreenState extends State<SegurosScreen> {
   }
 
   Future<void> _abrirForm() async {
-    List<Vehiculo> vehiculos = [];
-    try {
-      vehiculos = await _svc.listarVehiculos();
-    } on ApiException catch (e) {
-      _snack(e.mensaje);
-      return;
-    }
-    if (!mounted) return;
-
-    int? vehiculoId = vehiculos.isNotEmpty ? vehiculos.first.id : null;
+    Vehiculo? vehiculoSel;
     final tipo = TextEditingController(text: 'SOAT');
     final poliza = TextEditingController();
     final aseguradora = TextEditingController();
@@ -160,13 +152,9 @@ class _SegurosScreenState extends State<SegurosScreen> {
           title: const Text('Nueva póliza'),
           content: SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              DropdownButtonFormField<int>(
-                initialValue: vehiculoId,
-                decoration: const InputDecoration(labelText: 'Vehículo'),
-                items: vehiculos
-                    .map((v) => DropdownMenuItem(value: v.id, child: Text('${v.placa} ${v.marca ?? ''}')))
-                    .toList(),
-                onChanged: (v) => setLocal(() => vehiculoId = v),
+              SelectorVehiculo(
+                value: vehiculoSel,
+                onChanged: (v) => setLocal(() => vehiculoSel = v),
               ),
               _campo(tipo, 'Tipo (SOAT / TODO_RIESGO)'),
               _campo(poliza, 'N° de póliza'),
@@ -179,7 +167,7 @@ class _SegurosScreenState extends State<SegurosScreen> {
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
             FilledButton(
               onPressed: () => Navigator.pop(context, {
-                'vehiculo_id': vehiculoId,
+                'vehiculo_id': vehiculoSel?.id,
                 'tipo_seguro': tipo.text.trim(),
                 'num_poliza': poliza.text.trim(),
                 'aseguradora_entidad': aseguradora.text.trim(),
