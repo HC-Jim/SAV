@@ -1,3 +1,4 @@
+import 'mano_obra.dart';
 import 'vehiculo.dart';
 
 /// Estados de la Orden de Mantenimiento (deben coincidir con el backend).
@@ -132,6 +133,7 @@ class OrdenMantenimiento {
 
   final List<Inspeccion> inspecciones;
   final List<Requerimiento> requerimientos;
+  final List<ManoObra> manosObra;
   final List<Presupuesto> presupuestos;
   final List<InformeTecnico> informes;
   final Map<String, dynamic>? actaEntrega;
@@ -154,6 +156,9 @@ class OrdenMantenimiento {
         requerimientos = ((j['requerimiento_repuesto'] as List?) ?? [])
             .map((e) => Requerimiento.fromJson(e))
             .toList(),
+        manosObra = ((j['mano_obra'] as List?) ?? [])
+            .map((e) => ManoObra.fromJson(e))
+            .toList(),
         presupuestos = ((j['presupuesto'] as List?) ?? [])
             .map((e) => Presupuesto.fromJson(e))
             .toList(),
@@ -170,7 +175,21 @@ class OrdenMantenimiento {
           ? presupuestos.firstWhere((p) => p.estado == 'PENDIENTE')
           : (presupuestos.isNotEmpty ? presupuestos.last : null);
 
-  /// Requerimientos aún no comprados.
+  /// Requerimientos aún no aprobados.
   List<Requerimiento> get requerimientosPendientes =>
       requerimientos.where((r) => r.estado == 'SOLICITADO').toList();
+
+  bool get tieneRequerimientoAprobado =>
+      requerimientos.any((r) => r.estado == 'APROBADO');
+
+  /// Mano de obra aún no aprobada.
+  List<ManoObra> get manosObraPendientes =>
+      manosObra.where((m) => m.estado == 'SOLICITADO').toList();
+
+  bool get tieneManoObraAprobada => manosObra.any((m) => m.estado == 'APROBADO');
+
+  ManoObra? get manoObraAprobada =>
+      manosObra.where((m) => m.estado == 'APROBADO').isNotEmpty
+          ? manosObra.firstWhere((m) => m.estado == 'APROBADO')
+          : null;
 }

@@ -8,6 +8,7 @@ import '../state/auth_controller.dart';
 import '../widgets/estado_chip.dart';
 import 'dialogs/inspeccion_dialog.dart';
 import 'dialogs/requerimiento_dialog.dart';
+import 'dialogs/mano_obra_dialog.dart';
 import 'dialogs/presupuesto_dialog.dart';
 import 'dialogs/informe_dialog.dart';
 import 'dialogs/decision_dialog.dart';
@@ -90,6 +91,7 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
         _cardInfo(o),
         if (o.inspecciones.isNotEmpty) _cardInspeccion(o.inspecciones.last),
         if (o.requerimientos.isNotEmpty) _cardRequerimientos(o),
+        if (o.manosObra.isNotEmpty) _cardManoObra(o),
         if (o.presupuestos.isNotEmpty) _cardPresupuestos(o),
         if (o.informes.isNotEmpty) _cardInforme(o.informes.last),
         if (o.actaEntrega != null) _cardActa(o.actaEntrega!),
@@ -164,6 +166,35 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
               ...r.items.map((it) => Text(
                   '• ${it.nombre}  x${it.cantidad}  (S/ ${it.precioUnitario.toStringAsFixed(2)})')),
               const SizedBox(height: 8),
+            ],
+          );
+        }).toList(),
+      );
+
+  Widget _cardManoObra(OrdenMantenimiento o) => _card(
+        'Mano de obra',
+        Icons.build,
+        o.manosObra.map((m) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('S/ ${m.costo.toStringAsFixed(2)}',
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
+                  Chip(
+                    label: Text(m.estado),
+                    visualDensity: VisualDensity.compact,
+                    backgroundColor: m.estado == 'APROBADO'
+                        ? Colors.green.withValues(alpha: 0.15)
+                        : Colors.orange.withValues(alpha: 0.15),
+                  ),
+                ],
+              ),
+              if (m.observacion != null && m.observacion!.isNotEmpty)
+                Text(m.observacion!),
+              const SizedBox(height: 4),
             ],
           );
         }).toList(),
@@ -283,32 +314,45 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
       }
       if (e == EstadoOrden.inspeccionCompleta) {
         final insp = o.inspecciones.isNotEmpty ? o.inspecciones.last : null;
+        final sinHallazgos = insp?.resultado == 'SIN_HALLAZGOS';
         final necesita = insp?.necesitaRepuestos ?? false;
         final tieneReq = o.requerimientos.isNotEmpty;
-        final reqAprobado = o.requerimientos.any((r) => r.estado == 'APROBADO');
+        final reqListo = !necesita || o.tieneRequerimientoAprobado;
+        final tieneMO = o.manosObra.isNotEmpty;
+        final moAprobada = o.tieneManoObraAprobada;
 
-        // Con hallazgos y sin requerimiento aún → solicitar requerimiento
-        // (una sola vez; luego espera la aprobación del Jefe).
-        if (necesita && !tieneReq) {
-          acciones.add(_btn('Requerimiento repuestos', Icons.add_shopping_cart, () async {
-            final items = await mostrarRequerimientoDialog(context, _svc);
-            if (items != null && items.isNotEmpty) {
-              _ejecutar(() => _svc.crearRequerimiento(o.id, items));
-            }
-          }));
-        }
-        // Requerimiento aprobado por el Jefe → siguiente paso: generar presupuesto.
-        if (reqAprobado) {
-          acciones.add(_btn('Generar presupuesto', Icons.request_quote, () async {
-            final datos = await mostrarPresupuestoDialog(context, o);
-            if (datos != null) _ejecutar(() => _svc.generarPresupuesto(o.id, datos));
-          }));
-        }
-        // Sin hallazgos (no requiere repuestos) → iniciar directamente.
-        if (!necesita && !tieneReq) {
+        if (sinHallazgos) {
+          // Sin hallazgos: no requiere presupuesto, inicia directamente.
           acciones.add(_btn('Iniciar (sin hallazgos)', Icons.play_arrow, () {
             _ejecutar(() => _svc.iniciarMantenimiento(o.id));
           }, tonal: true));
+        } else {
+          // Con hallazgos: (requerimiento si necesita) + mano de obra → presupuesto.
+          if (necesita && !tieneReq) {
+            acciones.add(_btn('Requerimiento repuestos', Icons.add_shopping_cart, () async {
+              final items = await mostrarRequerimientoDialog(context, _svc);
+              if (items != null && items.isNotEmpty) {
+                _ejecutar(() => _svc.crearRequerimiento(o.id, items));
+              }
+            }));
+          }
+          if (!tieneMO) {
+            acciones.add(_btn('Registrar mano de obra', Icons.build, () async {
+              final datos = await mostrarManoObraDialog(context);
+              if (datos != null) {
+                _ejecutar(() => _svc.registrarManoObra(o.id,
+                    costo: (datos['costo'] as num).toDouble(),
+                    observacion: datos['observacion'] as String?));
+              }
+            }));
+          }
+          // Requerimiento (si aplica) y mano de obra aprobados → generar presupuesto.
+          if (reqListo && moAprobada) {
+            acciones.add(_btn('Generar presupuesto', Icons.request_quote, () async {
+              final datos = await mostrarPresupuestoDialog(context, o);
+              if (datos != null) _ejecutar(() => _svc.generarPresupuesto(o.id, datos));
+            }));
+          }
         }
       }
       if (e == EstadoOrden.presupuestoAutorizado) {
@@ -340,6 +384,11 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
         for (final r in o.requerimientosPendientes) {
           acciones.add(_btn('Aprobar req. #${r.id}', Icons.check_circle_outline, () {
             _ejecutar(() => _svc.aprobarRequerimiento(r.id));
+          }, tonal: true));
+        }
+        for (final m in o.manosObraPendientes) {
+          acciones.add(_btn('Aprobar mano de obra', Icons.check_circle_outline, () {
+            _ejecutar(() => _svc.aprobarManoObra(m.id));
           }, tonal: true));
         }
       }
