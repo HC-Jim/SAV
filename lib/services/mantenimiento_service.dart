@@ -34,6 +34,10 @@ class MantenimientoService {
     return data.map((e) => Repuesto.fromJson(e)).toList();
   }
 
+  /// Comprar más stock de un repuesto del catálogo (Jefe de Logística).
+  Future<void> comprarRepuesto(int repuestoId, int cantidad) =>
+      _api.patch('$_base/repuestos/$repuestoId/comprar', {'cantidad': cantidad});
+
   Future<List<Usuario>> listarMecanicos() async {
     final data = await _api.get('$_base/mecanicos') as List;
     return data.map((e) => Usuario.fromJson(e)).toList();

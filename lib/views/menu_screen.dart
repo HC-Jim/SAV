@@ -4,18 +4,18 @@ import '../models/usuario.dart';
 import '../state/auth_controller.dart';
 import '../theme.dart';
 import 'asesor/cotizaciones_screen.dart';
-import 'cliente/catalogo_screen.dart';
+import 'cliente/detalle_vehiculo_screen.dart';
 import 'cliente/mis_cotizaciones_screen.dart';
 import 'cliente/mis_reservas_screen.dart';
-import 'buscar_vehiculo_screen.dart';
 import 'crear_orden_screen.dart';
+import 'estado_vehiculo_screen.dart';
 import 'gestion/clientes_admin_screen.dart';
+import 'gestion/editar_vehiculo_screen.dart';
 import 'gestion/precios_screen.dart';
 import 'gestion/reservas_internas_screen.dart';
 import 'gestion/seguros_screen.dart';
-import 'gestion/vehiculos_admin_screen.dart';
+import 'lista_vehiculos_screen.dart';
 import 'login_screen.dart';
-import 'ordenes_list_screen.dart';
 import 'repuestos_screen.dart';
 
 /// Menú principal. Muestra opciones según el rol del usuario.
@@ -104,8 +104,17 @@ class MenuScreen extends StatelessWidget {
     // Reutilizables
     final repuestos = _OpcionMenu('Catálogo de repuestos', 'Stock y costos del almacén',
         Icons.inventory_2_outlined, () => const RepuestosScreen());
-    final catalogo = _OpcionMenu('Catálogo de vehículos', 'Consultar vehículos y disponibilidad',
-        Icons.directions_car_outlined, () => const CatalogoScreen());
+    final catalogo = _OpcionMenu(
+        'Catálogo de vehículos',
+        'Consultar vehículos y disponibilidad',
+        Icons.directions_car_outlined,
+        () => ListaVehiculosScreen(
+              titulo: 'Catálogo de vehículos',
+              onSeleccionar: (ctx, v) async {
+                await Navigator.of(ctx).push(MaterialPageRoute(
+                    builder: (_) => DetalleVehiculoScreen(vehiculo: v)));
+              },
+            ));
     final clientes = _OpcionMenu('Gestión de clientes', 'Registrar y editar clientes',
         Icons.people_outline, () => const ClientesAdminScreen());
     final cotizaciones = _OpcionMenu('Cotizaciones', 'Generar y gestionar cotizaciones',
@@ -125,15 +134,37 @@ class MenuScreen extends StatelessWidget {
     }
     if (usuario.esMecanico) {
       return [
-        _OpcionMenu('Órdenes de mantenimiento', 'Órdenes asignadas y ejecución',
-            Icons.assignment_outlined, () => const OrdenesListScreen()),
+        _OpcionMenu(
+            'Órdenes de mantenimiento',
+            'Elige un vehículo y ve sus órdenes',
+            Icons.assignment_outlined,
+            () => ListaVehiculosScreen(
+                  titulo: 'Órdenes · elige un vehículo',
+                  onSeleccionar: (ctx, v) async {
+                    await Navigator.of(ctx).push(MaterialPageRoute(
+                        builder: (_) => EstadoVehiculoScreen(vehiculo: v)));
+                  },
+                )),
         repuestos,
       ];
     }
     if (usuario.esAdministrador) {
       return [
-        _OpcionMenu('Gestión de vehículos', 'Registrar y editar la flota',
-            Icons.garage_outlined, () => const VehiculosAdminScreen()),
+        _OpcionMenu(
+            'Gestión de vehículos',
+            'Registrar, editar y eliminar la flota',
+            Icons.garage_outlined,
+            () => ListaVehiculosScreen(
+                  titulo: 'Vehículos',
+                  onSeleccionar: (ctx, v) async {
+                    await Navigator.of(ctx).push(MaterialPageRoute(
+                        builder: (_) => EditarVehiculoScreen(vehiculo: v)));
+                  },
+                  onAgregar: (ctx) async {
+                    await Navigator.of(ctx).push(MaterialPageRoute(
+                        builder: (_) => const EditarVehiculoScreen()));
+                  },
+                )),
         _OpcionMenu('Catálogo de precios', 'Tarifas por categoría de vehículo',
             Icons.sell_outlined, () => const PreciosScreen()),
         _OpcionMenu('Seguros y renovaciones', 'Registrar y renovar pólizas',
@@ -148,9 +179,17 @@ class MenuScreen extends StatelessWidget {
     }
     // Jefe de Logística: mantenimiento + consulta de reservas.
     return [
-      _OpcionMenu('Órdenes de mantenimiento', 'Elige un vehículo y ve su estado y órdenes',
+      _OpcionMenu(
+          'Órdenes de mantenimiento',
+          'Elige un vehículo y ve su estado y órdenes',
           Icons.assignment_outlined,
-          () => const BuscarVehiculoScreen(modo: ModoVehiculo.verEstado)),
+          () => ListaVehiculosScreen(
+                titulo: 'Órdenes · elige un vehículo',
+                onSeleccionar: (ctx, v) async {
+                  await Navigator.of(ctx).push(MaterialPageRoute(
+                      builder: (_) => EstadoVehiculoScreen(vehiculo: v)));
+                },
+              )),
       _OpcionMenu('Crear orden de mantenimiento', 'Buscar vehículo e iniciar una OM',
           Icons.add_box_outlined, () => const CrearOrdenScreen()),
       repuestos,

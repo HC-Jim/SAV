@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/orden_mantenimiento.dart';
 import '../models/vehiculo.dart';
 import '../services/mantenimiento_service.dart';
+import '../state/auth_controller.dart';
 import 'crear_orden_screen.dart';
 import 'orden_detail_screen.dart';
 
@@ -35,6 +37,7 @@ class _EstadoVehiculoScreenState extends State<EstadoVehiculoScreen> {
     final v = widget.vehiculo;
     final alquilado = v.estado == 'ALQUILADO';
     final disponible = v.estado == 'DISPONIBLE';
+    final esJefe = context.watch<AuthController>().usuario?.esJefe ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -84,8 +87,8 @@ class _EstadoVehiculoScreenState extends State<EstadoVehiculoScreen> {
               ),
             ),
 
-          // --- Crear orden (solo si está disponible) ---
-          if (disponible)
+          // --- Crear orden (solo el Jefe, y si está disponible) ---
+          if (disponible && esJefe)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: FilledButton.icon(
