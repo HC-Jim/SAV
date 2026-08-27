@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../models/orden_mantenimiento.dart';
 import '../models/vehiculo.dart';
 import '../services/mantenimiento_service.dart';
-import '../state/auth_controller.dart';
-import 'crear_orden_screen.dart';
 import 'orden_detail_screen.dart';
 
 /// Estado de un vehículo: su estado actual y las órdenes de mantenimiento
@@ -36,8 +33,6 @@ class _EstadoVehiculoScreenState extends State<EstadoVehiculoScreen> {
   Widget build(BuildContext context) {
     final v = widget.vehiculo;
     final alquilado = v.estado == 'ALQUILADO';
-    final disponible = v.estado == 'DISPONIBLE';
-    final esJefe = context.watch<AuthController>().usuario?.esJefe ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -84,24 +79,6 @@ class _EstadoVehiculoScreenState extends State<EstadoVehiculoScreen> {
                 title: Text('En uso por un cliente'),
                 subtitle: Text(
                     'El vehículo está reservado/alquilado. No se puede crear una orden de mantenimiento hasta su devolución.'),
-              ),
-            ),
-
-          // --- Crear orden (solo el Jefe, y si está disponible) ---
-          if (disponible && esJefe)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: FilledButton.icon(
-                onPressed: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => CrearOrdenScreen(vehiculoPreseleccionado: v),
-                    ),
-                  );
-                  _cargar();
-                },
-                icon: const Icon(Icons.add_box_outlined),
-                label: const Text('Crear orden de mantenimiento'),
               ),
             ),
 
