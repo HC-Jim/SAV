@@ -28,9 +28,11 @@ class SelectorVehiculo extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () async {
-        final elegido = await showDialog<Vehiculo>(
-          context: context,
-          builder: (_) => _BuscadorVehiculoDialog(soloDisponibles: soloDisponibles),
+        final elegido = await Navigator.of(context).push<Vehiculo>(
+          MaterialPageRoute(
+            fullscreenDialog: true,
+            builder: (_) => _BuscadorVehiculoScreen(soloDisponibles: soloDisponibles),
+          ),
         );
         if (elegido != null) onChanged(elegido);
       },
@@ -52,17 +54,17 @@ class SelectorVehiculo extends StatelessWidget {
   }
 }
 
-/// Diálogo del buscador (lista + filtro por texto). Rendering único del caso
-/// «include» Buscar Vehículo.
-class _BuscadorVehiculoDialog extends StatefulWidget {
+/// Buscador a pantalla completa (lista + filtro por texto). Rendering único
+/// del caso «include» Buscar Vehículo.
+class _BuscadorVehiculoScreen extends StatefulWidget {
   final bool soloDisponibles;
-  const _BuscadorVehiculoDialog({required this.soloDisponibles});
+  const _BuscadorVehiculoScreen({required this.soloDisponibles});
 
   @override
-  State<_BuscadorVehiculoDialog> createState() => _BuscadorVehiculoDialogState();
+  State<_BuscadorVehiculoScreen> createState() => _BuscadorVehiculoScreenState();
 }
 
-class _BuscadorVehiculoDialogState extends State<_BuscadorVehiculoDialog> {
+class _BuscadorVehiculoScreenState extends State<_BuscadorVehiculoScreen> {
   final _svc = AlquilerService();
   late Future<List<Vehiculo>> _futuro;
   String _filtro = '';
@@ -88,11 +90,10 @@ class _BuscadorVehiculoDialogState extends State<_BuscadorVehiculoDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Buscar vehículo'),
-      content: SizedBox(
-        width: double.maxFinite,
-        height: 420,
+    return Scaffold(
+      appBar: AppBar(title: const Text('Buscar vehículo')),
+      body: Padding(
+        padding: const EdgeInsets.all(12),
         child: Column(
           children: [
             TextField(
@@ -145,10 +146,6 @@ class _BuscadorVehiculoDialogState extends State<_BuscadorVehiculoDialog> {
           ],
         ),
       ),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-      ],
     );
   }
 }

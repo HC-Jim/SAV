@@ -58,8 +58,8 @@ class MantenimientoService {
     });
   }
 
-  Future<void> comprarRepuestos(int requerimientoId) =>
-      _api.patch('$_base/requerimientos/$requerimientoId/comprar');
+  Future<void> aprobarRequerimiento(int requerimientoId) =>
+      _api.patch('$_base/requerimientos/$requerimientoId/aprobar');
 
   Future<void> decidirPresupuesto(int presupuestoId, bool autorizado, {String? motivo}) =>
       _api.patch('$_base/presupuestos/$presupuestoId/decidir',

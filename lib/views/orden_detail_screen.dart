@@ -155,7 +155,7 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
                   Chip(
                     label: Text(r.estado),
                     visualDensity: VisualDensity.compact,
-                    backgroundColor: r.estado == 'COMPRADO'
+                    backgroundColor: r.estado == 'APROBADO'
                         ? Colors.green.withValues(alpha: 0.15)
                         : Colors.orange.withValues(alpha: 0.15),
                   ),
@@ -282,19 +282,34 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
         }));
       }
       if (e == EstadoOrden.inspeccionCompleta) {
-        acciones.add(_btn('Requerimiento repuestos', Icons.add_shopping_cart, () async {
-          final items = await mostrarRequerimientoDialog(context, _svc);
-          if (items != null && items.isNotEmpty) {
-            _ejecutar(() => _svc.crearRequerimiento(o.id, items));
-          }
-        }));
-        acciones.add(_btn('Generar presupuesto', Icons.request_quote, () async {
-          final datos = await mostrarPresupuestoDialog(context, _svc);
-          if (datos != null) _ejecutar(() => _svc.generarPresupuesto(o.id, datos));
-        }));
-        acciones.add(_btn('Iniciar (sin hallazgos)', Icons.play_arrow, () {
-          _ejecutar(() => _svc.iniciarMantenimiento(o.id));
-        }, tonal: true));
+        final insp = o.inspecciones.isNotEmpty ? o.inspecciones.last : null;
+        final necesita = insp?.necesitaRepuestos ?? false;
+        final tieneReq = o.requerimientos.isNotEmpty;
+        final reqAprobado = o.requerimientos.any((r) => r.estado == 'APROBADO');
+
+        // Con hallazgos y sin requerimiento aún → solicitar requerimiento
+        // (una sola vez; luego espera la aprobación del Jefe).
+        if (necesita && !tieneReq) {
+          acciones.add(_btn('Requerimiento repuestos', Icons.add_shopping_cart, () async {
+            final items = await mostrarRequerimientoDialog(context, _svc);
+            if (items != null && items.isNotEmpty) {
+              _ejecutar(() => _svc.crearRequerimiento(o.id, items));
+            }
+          }));
+        }
+        // Requerimiento aprobado por el Jefe → siguiente paso: generar presupuesto.
+        if (reqAprobado) {
+          acciones.add(_btn('Generar presupuesto', Icons.request_quote, () async {
+            final datos = await mostrarPresupuestoDialog(context, o);
+            if (datos != null) _ejecutar(() => _svc.generarPresupuesto(o.id, datos));
+          }));
+        }
+        // Sin hallazgos (no requiere repuestos) → iniciar directamente.
+        if (!necesita && !tieneReq) {
+          acciones.add(_btn('Iniciar (sin hallazgos)', Icons.play_arrow, () {
+            _ejecutar(() => _svc.iniciarMantenimiento(o.id));
+          }, tonal: true));
+        }
       }
       if (e == EstadoOrden.presupuestoAutorizado) {
         acciones.add(_btn('Iniciar mantenimiento', Icons.play_arrow, () {
@@ -323,8 +338,8 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
     if (u.esJefe) {
       if (e == EstadoOrden.inspeccionCompleta || e == EstadoOrden.pendienteAutorizacion) {
         for (final r in o.requerimientosPendientes) {
-          acciones.add(_btn('Comprar req. #${r.id}', Icons.shopping_cart_checkout, () {
-            _ejecutar(() => _svc.comprarRepuestos(r.id));
+          acciones.add(_btn('Aprobar req. #${r.id}', Icons.check_circle_outline, () {
+            _ejecutar(() => _svc.aprobarRequerimiento(r.id));
           }, tonal: true));
         }
       }
