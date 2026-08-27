@@ -56,10 +56,11 @@ lib/
     │   ├── clientes_admin_screen.dart    CRUD cliente (Asesor/Admin)
     │   ├── seguros_screen.dart           Seguros + por vencer (Admin)
     │   └── reservas_internas_screen.dart Reservas + acciones del Cajero
-    ├── ordenes_list_screen.dart      (Mantenimiento) lista + filtro
+    ├── buscar_vehiculo_screen.dart   (Jefe) Buscar Vehículo (flota + estado); modos crear/ver
+    ├── estado_vehiculo_screen.dart   (Jefe) estado del vehículo + sus órdenes
+    ├── ordenes_list_screen.dart      (Mecánico) lista + filtro por estado
     ├── orden_detail_screen.dart      detalle + acciones por rol/estado
-    ├── crear_orden_screen.dart       (Jefe) crear OM
-    ├── vehiculos_screen.dart         (Jefe) vehículos por mantener
+    ├── crear_orden_screen.dart       formulario de OM (vehículo preseleccionado)
     ├── repuestos_screen.dart         catálogo de repuestos
     └── dialogs/                      formularios del flujo de mantenimiento
         ├── inspeccion_dialog.dart · requerimiento_dialog.dart
@@ -97,7 +98,7 @@ inyecta en cada petición.
 | **Cliente** | Catálogo, detalle, mis cotizaciones, mis reservas |
 | **Asesor de Ventas** | Cotizaciones, CRUD cliente |
 | **Cajero** | Reservas (pagos, devolución de garantía, cancelación, comprobantes) |
-| **Jefe de Logística** | Órdenes de mantenimiento, vehículos por mantener |
+| **Jefe de Logística** | Órdenes de mantenimiento y Crear orden (ambas parten de **Buscar Vehículo**); repuestos; reservas |
 | **Mecánico** | Órdenes asignadas (inspección, presupuesto, ejecución, informe) |
 | **Administrador** | Vehículos, precios, seguros, clientes |
 
