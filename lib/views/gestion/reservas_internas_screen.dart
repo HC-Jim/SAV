@@ -188,11 +188,55 @@ class _ReservasInternasScreenState extends State<ReservasInternasScreen> {
     );
   }
 
+  /// Cobrar días extra por retraso (días × precio por día) + comprobante.
+  Future<void> _cobrarDiasExtra(Reserva r) async {
+    final ctrl = TextEditingController(text: '1');
+    final dias = await showDialog<int>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Cobrar días extra'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text('Reserva #${r.id}  ·  ${r.vehiculo?.placa ?? ''}'),
+          const SizedBox(height: 8),
+          TextField(
+            controller: ctrl,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(labelText: 'Días extra'),
+          ),
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text('Se cobra: días × precio por día, y se emite el comprobante.',
+                style: TextStyle(fontSize: 12, color: Colors.black54)),
+          ),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, int.tryParse(ctrl.text.trim()) ?? 0),
+            child: const Text('Cobrar'),
+          ),
+        ],
+      ),
+    );
+    if (dias != null && dias > 0) {
+      _ejecutar(() => _svc.cobrarDiasExtra(r.id, dias));
+    }
+  }
+
   List<Widget> _accionesCajero(Reserva r) {
     final acciones = <Widget>[];
     final off = _procesando;
 
-    if (r.estado == EstadoReserva.confirmada) {
+    if (r.estado == EstadoReserva.pendienteAprobacion) {
+      acciones.add(FilledButton(
+        onPressed: off ? null : () => _ejecutar(() => _svc.aprobarReserva(r.id)),
+        child: const Text('Aprobar reserva'),
+      ));
+      acciones.add(OutlinedButton(
+        onPressed: off ? null : () => _gestionarCancelacion(r),
+        child: const Text('Cancelar'),
+      ));
+    } else if (r.estado == EstadoReserva.confirmada) {
       acciones.add(FilledButton(
         onPressed: off ? null : () => _ejecutar(() => _svc.pagarAlquiler(r.id)),
         child: const Text('Registrar pago de alquiler'),
@@ -209,6 +253,10 @@ class _ReservasInternasScreenState extends State<ReservasInternasScreen> {
       acciones.add(OutlinedButton(
         onPressed: off ? null : () => _emitirComprobante(r),
         child: const Text('Emitir comprobante'),
+      ));
+      acciones.add(OutlinedButton(
+        onPressed: off ? null : () => _cobrarDiasExtra(r),
+        child: const Text('Cobrar días extra'),
       ));
       acciones.add(OutlinedButton(
         onPressed: off ? null : () => _gestionarCancelacion(r),

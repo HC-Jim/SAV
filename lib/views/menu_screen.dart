@@ -12,6 +12,7 @@ import 'estado_vehiculo_screen.dart';
 import 'ordenes_list_screen.dart';
 import 'gestion/clientes_admin_screen.dart';
 import 'gestion/editar_vehiculo_screen.dart';
+import 'gestion/garantias_screen.dart';
 import 'gestion/precios_screen.dart';
 import 'gestion/reservas_internas_screen.dart';
 import 'gestion/seguros_screen.dart';
@@ -184,7 +185,13 @@ class MenuScreen extends StatelessWidget {
       return [catalogo, precios, clientes, cotizaciones, reservasInternas];
     }
     if (usuario.esCajero) {
-      return [reservasInternas];
+      return [
+        _OpcionMenu('Garantías', 'Aprobar garantías y emitir comprobante',
+            Icons.verified_user_outlined, () => const GarantiasScreen()),
+        _OpcionMenu('Órdenes de reserva', 'Aprobar reservas, pagos, comprobantes y días extra',
+            Icons.event_note_outlined, () => const ReservasInternasScreen()),
+        precios,
+      ];
     }
     // Jefe de Logística: mantenimiento + consulta de reservas.
     return [

@@ -118,6 +118,9 @@ class _CotizacionesScreenState extends State<CotizacionesScreen> {
       ));
     }
     if (c.estado == EstadoCotizacion.garantiaPagada) {
+      acciones.add(const Chip(label: Text('Garantía pendiente de aprobación del cajero')));
+    }
+    if (c.estado == EstadoCotizacion.garantiaAprobada) {
       acciones.add(FilledButton(
         onPressed: _procesando ? null : () => _ejecutar(() => _svc.generarReserva(c.id)),
         child: const Text('Generar orden de reserva'),

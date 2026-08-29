@@ -122,10 +122,21 @@ class _MisCotizacionesScreenState extends State<MisCotizacionesScreen> {
         child: const Text('Rechazar'),
       ));
     }
-    if (c.estado == EstadoCotizacion.garantiaSolicitada) {
+    // Self-service: puede pagar tras aceptar o tras solicitud del asesor.
+    if (c.estado == EstadoCotizacion.aceptada ||
+        c.estado == EstadoCotizacion.garantiaSolicitada) {
       acciones.add(FilledButton(
         onPressed: _procesando ? null : () => _ejecutar(() => _svc.pagarGarantia(c.id)),
         child: const Text('Pagar garantía'),
+      ));
+    }
+    if (c.estado == EstadoCotizacion.garantiaPagada) {
+      acciones.add(const Chip(label: Text('Esperando aprobación del cajero')));
+    }
+    if (c.estado == EstadoCotizacion.garantiaAprobada) {
+      acciones.add(FilledButton(
+        onPressed: _procesando ? null : () => _ejecutar(() => _svc.generarReserva(c.id)),
+        child: const Text('Generar reserva'),
       ));
     }
     return acciones;

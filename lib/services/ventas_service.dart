@@ -29,6 +29,26 @@ class VentasService {
   Future<void> solicitarGarantia(int id) => _api.post('$_base/cotizaciones/$id/solicitar-garantia');
   Future<void> generarReserva(int id) => _api.post('$_base/cotizaciones/$id/generar-reserva');
 
+  /// Cotización self-service del Cliente (el cliente sale del token).
+  Future<void> generarPropia({
+    required int vehiculoId,
+    required String fechaInicio,
+    required String fechaFin,
+  }) =>
+      _api.post('$_base/cotizaciones', {
+        'vehiculo_id': vehiculoId,
+        'fecha_inicio': fechaInicio,
+        'fecha_fin': fechaFin,
+      });
+
+  // ---- Cajero ----
+  Future<List<Cotizacion>> garantiasPendientes() async {
+    final data = await _api.get('$_base/cotizaciones/garantias-pendientes') as List;
+    return data.map((e) => Cotizacion.fromJson(e)).toList();
+  }
+
+  Future<void> aprobarGarantia(int id) => _api.patch('$_base/cotizaciones/$id/aprobar-garantia');
+
   // ---- Cliente ----
   Future<List<Cotizacion>> mias() async {
     final data = await _api.get('$_base/cotizaciones/mias') as List;

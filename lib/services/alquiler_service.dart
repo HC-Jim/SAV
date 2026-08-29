@@ -47,6 +47,14 @@ class AlquilerService {
 
   // ---------- Acciones del Cajero ----------
 
+  /// Aprobar la orden de reserva (Cajero): PENDIENTE_APROBACION → CONFIRMADA + comprobante.
+  Future<void> aprobarReserva(int reservaId) =>
+      _api.patch('$_base/reservas/$reservaId/aprobar');
+
+  /// Cobrar días extra (retraso): días × precio por día + comprobante.
+  Future<void> cobrarDiasExtra(int reservaId, int dias) =>
+      _api.patch('$_base/reservas/$reservaId/cobrar-extra', {'dias': dias});
+
   /// Devolver Garantía (Cajero): EN_CURSO → FINALIZADA, con deducciones opcionales.
   Future<void> devolverGarantia(int reservaId,
           {double deducciones = 0, String metodo = 'TARJETA'}) =>

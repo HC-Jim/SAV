@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/vehiculo.dart';
 import '../../services/api_client.dart';
 import '../../services/alquiler_service.dart';
+import '../../services/ventas_service.dart';
+import '../../state/auth_controller.dart';
 
 /// Detalle del vehículo + selección de fechas, disponibilidad y reserva.
 class DetalleVehiculoScreen extends StatefulWidget {
@@ -14,6 +17,7 @@ class DetalleVehiculoScreen extends StatefulWidget {
 
 class _DetalleVehiculoScreenState extends State<DetalleVehiculoScreen> {
   final _svc = AlquilerService();
+  final _ventas = VentasService();
   DateTime? _inicio;
   DateTime? _fin;
   String? _mensajeDisp;
@@ -86,6 +90,7 @@ class _DetalleVehiculoScreenState extends State<DetalleVehiculoScreen> {
                   _fila('Color', v.color ?? '-'),
                   _fila('SKU', v.sku ?? '-'),
                   _fila('Categoría', v.categoria ?? '-'),
+                  _fila('Precio', 'S/ ${v.precioNormal.toStringAsFixed(2)} / día'),
                 ],
               ),
             ),
@@ -123,14 +128,48 @@ class _DetalleVehiculoScreenState extends State<DetalleVehiculoScreen> {
                     fontWeight: _disponible ? FontWeight.bold : FontWeight.normal)),
           ],
           const SizedBox(height: 16),
-          const Text(
-            'Para reservar este vehículo, acércate a un Asesor de Ventas: '
-            'él generará tu cotización y luego podrás pagar la garantía desde "Mis cotizaciones".',
-            style: TextStyle(color: Colors.black54, fontSize: 13),
-          ),
+          if (context.watch<AuthController>().usuario?.esCliente ?? false) ...[
+            FilledButton.icon(
+              onPressed: (_procesando || !_disponible) ? null : _solicitarCotizacion,
+              icon: const Icon(Icons.request_quote_outlined),
+              label: const Text('Solicitar cotización'),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Verifica la disponibilidad y solicita tu cotización. Luego, en '
+              '"Mis cotizaciones", acéptala y paga la garantía.',
+              style: TextStyle(color: Colors.black54, fontSize: 13),
+            ),
+          ] else
+            const Text(
+              'El Asesor de Ventas puede generar la cotización para un cliente.',
+              style: TextStyle(color: Colors.black54, fontSize: 13),
+            ),
         ],
       ),
     );
+  }
+
+  Future<void> _solicitarCotizacion() async {
+    if (_inicio == null || _fin == null) {
+      _snack('Selecciona fecha de inicio y fin');
+      return;
+    }
+    setState(() => _procesando = true);
+    try {
+      await _ventas.generarPropia(
+        vehiculoId: widget.vehiculo.id,
+        fechaInicio: _fmt(_inicio!),
+        fechaFin: _fmt(_fin!),
+      );
+      if (!mounted) return;
+      _snack('Cotización creada. Revísala en "Mis cotizaciones".');
+      Navigator.of(context).pop();
+    } on ApiException catch (e) {
+      _snack(e.mensaje);
+    } finally {
+      if (mounted) setState(() => _procesando = false);
+    }
   }
 
   Widget _fila(String k, String val) => Padding(

@@ -2,6 +2,7 @@ import 'vehiculo.dart';
 
 /// Estados de la reserva (coinciden con el backend).
 class EstadoReserva {
+  static const pendienteAprobacion = 'PENDIENTE_APROBACION';
   static const pendientePago = 'PENDIENTE_PAGO_GARANTIA';
   static const confirmada = 'CONFIRMADA';
   static const enCurso = 'EN_CURSO';
@@ -10,6 +11,8 @@ class EstadoReserva {
 
   static String legible(String e) {
     switch (e) {
+      case pendienteAprobacion:
+        return 'Pendiente de aprobación (Cajero)';
       case pendientePago:
         return 'Pendiente de pago de garantía';
       case confirmada:

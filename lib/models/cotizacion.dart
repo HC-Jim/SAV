@@ -6,6 +6,7 @@ class EstadoCotizacion {
   static const rechazada = 'RECHAZADA';
   static const garantiaSolicitada = 'GARANTIA_SOLICITADA';
   static const garantiaPagada = 'GARANTIA_PAGADA';
+  static const garantiaAprobada = 'GARANTIA_APROBADA';
   static const convertida = 'CONVERTIDA';
 
   static String legible(String e) {
@@ -19,7 +20,9 @@ class EstadoCotizacion {
       case garantiaSolicitada:
         return 'Garantía solicitada';
       case garantiaPagada:
-        return 'Garantía pagada';
+        return 'Garantía pagada (pendiente de aprobación)';
+      case garantiaAprobada:
+        return 'Garantía aprobada';
       case convertida:
         return 'Convertida en reserva';
       default:
