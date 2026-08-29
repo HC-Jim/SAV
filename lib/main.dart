@@ -16,7 +16,7 @@ class AutoRentApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => AuthController(),
       child: MaterialApp(
-        title: 'AutoRent - Mantenimiento',
+        title: 'AutoRent - Sistema de Alquiler de Vehículos',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.theme,
         home: const LoginScreen(),

@@ -105,6 +105,8 @@ class MenuScreen extends StatelessWidget {
     // Reutilizables
     final repuestos = _OpcionMenu('Catálogo de repuestos', 'Stock y costos del almacén',
         Icons.inventory_2_outlined, () => const RepuestosScreen());
+    final precios = _OpcionMenu('Catálogo de precios', 'Consultar precios por día del vehículo',
+        Icons.sell_outlined, () => const PreciosScreen());
     // Órdenes de mantenimiento: dentro de cada orden se alterna entre el flujo
     // de Presupuesto y el de Ejecución (dos botones).
     final ordenes = _OpcionMenu(
@@ -146,6 +148,7 @@ class MenuScreen extends StatelessWidget {
     if (usuario.esCliente) {
       return [
         catalogo,
+        precios,
         _OpcionMenu('Mis cotizaciones', 'Aceptar/rechazar y pagar garantía',
             Icons.request_quote_outlined, () => const MisCotizacionesScreen()),
         _OpcionMenu('Mis reservas', 'Pagar alquiler y cancelar',
@@ -172,14 +175,13 @@ class MenuScreen extends StatelessWidget {
                         builder: (_) => const EditarVehiculoScreen()));
                   },
                 )),
-        _OpcionMenu('Catálogo de precios', 'Tarifas por categoría de vehículo',
-            Icons.sell_outlined, () => const PreciosScreen()),
+        precios,
         _OpcionMenu('Seguros y renovaciones', 'Registrar y renovar pólizas',
             Icons.shield_outlined, () => const SegurosScreen()),
       ];
     }
     if (usuario.esAsesor) {
-      return [catalogo, clientes, cotizaciones, reservasInternas];
+      return [catalogo, precios, clientes, cotizaciones, reservasInternas];
     }
     if (usuario.esCajero) {
       return [reservasInternas];
