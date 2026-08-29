@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/fase_orden.dart';
 import '../models/orden_mantenimiento.dart';
 import '../models/usuario.dart';
 import '../services/api_client.dart';
 import '../services/mantenimiento_service.dart';
+import '../services/pdf_generator.dart';
 import '../state/auth_controller.dart';
 import '../widgets/estado_chip.dart';
 import 'dialogs/inspeccion_dialog.dart';
@@ -17,7 +19,8 @@ import 'dialogs/decision_dialog.dart';
 /// según el rol del usuario y el estado actual de la orden.
 class OrdenDetailScreen extends StatefulWidget {
   final int ordenId;
-  const OrdenDetailScreen({super.key, required this.ordenId});
+  final FaseOrden fase;
+  const OrdenDetailScreen({super.key, required this.ordenId, required this.fase});
 
   @override
   State<OrdenDetailScreen> createState() => _OrdenDetailScreenState();
@@ -301,11 +304,24 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
   }
 
   List<Widget> _accionesDisponibles(OrdenMantenimiento o, Usuario u) {
-    if (o.esFinal) return [];
     final acciones = <Widget>[];
+    final esPres = widget.fase == FaseOrden.presupuesto;
+    final esInf = widget.fase == FaseOrden.informe;
+
+    // Documentos PDF (disponibles aunque la orden esté cerrada).
+    if (esPres && o.presupuestos.isNotEmpty) {
+      acciones.add(_btn('Presupuesto (PDF)', Icons.picture_as_pdf,
+          () => generarPresupuestoPdf(o), tonal: true));
+    }
+    if (esInf && o.informes.isNotEmpty) {
+      acciones.add(_btn('Informe Técnico (PDF)', Icons.picture_as_pdf,
+          () => generarInformePdf(o), tonal: true));
+    }
+
+    if (o.esFinal) return acciones;
     final e = o.estado;
 
-    if (u.esMecanico) {
+    if (u.esMecanico && esPres) {
       if (e == EstadoOrden.pendienteInspeccion || e == EstadoOrden.inspeccionPostergada) {
         acciones.add(_btn('Registrar inspección', Icons.search, () async {
           final datos = await mostrarInspeccionDialog(context);
@@ -355,6 +371,9 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
           }
         }
       }
+    }
+
+    if (u.esMecanico && esInf) {
       if (e == EstadoOrden.presupuestoAutorizado) {
         acciones.add(_btn('Iniciar mantenimiento', Icons.play_arrow, () {
           _ejecutar(() => _svc.iniciarMantenimiento(o.id));
@@ -379,7 +398,7 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
       }
     }
 
-    if (u.esJefe) {
+    if (u.esJefe && esPres) {
       if (e == EstadoOrden.inspeccionCompleta || e == EstadoOrden.pendienteAutorizacion) {
         for (final r in o.requerimientosPendientes) {
           acciones.add(_btn('Aprobar req. #${r.id}', Icons.check_circle_outline, () {
@@ -402,6 +421,9 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
           if (motivo != null) _ejecutar(() => _svc.decidirPresupuesto(p.id, false, motivo: motivo));
         }, peligro: true));
       }
+    }
+
+    if (u.esJefe && esInf) {
       if (e == EstadoOrden.pendienteConformidad) {
         acciones.add(_btn('Dar conformidad y cerrar', Icons.verified, () {
           _ejecutar(() => _svc.decidirConformidad(o.id, true));

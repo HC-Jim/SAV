@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/fase_orden.dart';
 import '../models/usuario.dart';
 import '../state/auth_controller.dart';
 import '../theme.dart';
@@ -104,6 +105,32 @@ class MenuScreen extends StatelessWidget {
     // Reutilizables
     final repuestos = _OpcionMenu('Catálogo de repuestos', 'Stock y costos del almacén',
         Icons.inventory_2_outlined, () => const RepuestosScreen());
+    // Módulo 1: hasta la autorización del presupuesto.
+    final modPresupuesto = _OpcionMenu(
+        'Presupuesto',
+        'Inspección, requerimiento, mano de obra y presupuesto',
+        Icons.request_quote_outlined,
+        () => ListaVehiculosScreen(
+              titulo: 'Presupuesto · elige un vehículo',
+              onSeleccionar: (ctx, v) async {
+                await Navigator.of(ctx).push(MaterialPageRoute(
+                    builder: (_) =>
+                        EstadoVehiculoScreen(vehiculo: v, fase: FaseOrden.presupuesto)));
+              },
+            ));
+    // Módulo 2: ejecución, pruebas e informe técnico.
+    final modInforme = _OpcionMenu(
+        'Informe Técnico',
+        'Ejecución, pruebas e informe técnico',
+        Icons.description_outlined,
+        () => ListaVehiculosScreen(
+              titulo: 'Informe Técnico · elige un vehículo',
+              onSeleccionar: (ctx, v) async {
+                await Navigator.of(ctx).push(MaterialPageRoute(
+                    builder: (_) =>
+                        EstadoVehiculoScreen(vehiculo: v, fase: FaseOrden.informe)));
+              },
+            ));
     final catalogo = _OpcionMenu(
         'Catálogo de vehículos',
         'Consultar vehículos y disponibilidad',
@@ -133,20 +160,7 @@ class MenuScreen extends StatelessWidget {
       ];
     }
     if (usuario.esMecanico) {
-      return [
-        _OpcionMenu(
-            'Órdenes de mantenimiento',
-            'Elige un vehículo y ve sus órdenes',
-            Icons.assignment_outlined,
-            () => ListaVehiculosScreen(
-                  titulo: 'Órdenes · elige un vehículo',
-                  onSeleccionar: (ctx, v) async {
-                    await Navigator.of(ctx).push(MaterialPageRoute(
-                        builder: (_) => EstadoVehiculoScreen(vehiculo: v)));
-                  },
-                )),
-        repuestos,
-      ];
+      return [modPresupuesto, modInforme, repuestos];
     }
     if (usuario.esAdministrador) {
       return [
@@ -177,19 +191,10 @@ class MenuScreen extends StatelessWidget {
     if (usuario.esCajero) {
       return [reservasInternas];
     }
-    // Jefe de Logística: mantenimiento + consulta de reservas.
+    // Jefe de Logística: mantenimiento (2 módulos) + consulta de reservas.
     return [
-      _OpcionMenu(
-          'Órdenes de mantenimiento',
-          'Elige un vehículo y ve su estado y órdenes',
-          Icons.assignment_outlined,
-          () => ListaVehiculosScreen(
-                titulo: 'Órdenes · elige un vehículo',
-                onSeleccionar: (ctx, v) async {
-                  await Navigator.of(ctx).push(MaterialPageRoute(
-                      builder: (_) => EstadoVehiculoScreen(vehiculo: v)));
-                },
-              )),
+      modPresupuesto,
+      modInforme,
       _OpcionMenu('Crear orden de mantenimiento', 'Buscar vehículo e iniciar una OM',
           Icons.add_box_outlined, () => const CrearOrdenScreen()),
       repuestos,
