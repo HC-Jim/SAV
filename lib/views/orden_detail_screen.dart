@@ -11,6 +11,7 @@ import '../widgets/estado_chip.dart';
 import 'dialogs/inspeccion_dialog.dart';
 import 'dialogs/requerimiento_dialog.dart';
 import 'dialogs/mano_obra_dialog.dart';
+import 'dialogs/finalizar_dialog.dart';
 import 'dialogs/presupuesto_dialog.dart';
 import 'dialogs/informe_dialog.dart';
 import 'dialogs/decision_dialog.dart';
@@ -19,8 +20,7 @@ import 'dialogs/decision_dialog.dart';
 /// según el rol del usuario y el estado actual de la orden.
 class OrdenDetailScreen extends StatefulWidget {
   final int ordenId;
-  final FaseOrden fase;
-  const OrdenDetailScreen({super.key, required this.ordenId, required this.fase});
+  const OrdenDetailScreen({super.key, required this.ordenId});
 
   @override
   State<OrdenDetailScreen> createState() => _OrdenDetailScreenState();
@@ -30,6 +30,8 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
   final _svc = MantenimientoService();
   late Future<OrdenMantenimiento> _futuro;
   bool _procesando = false;
+  // Fase activa: el usuario alterna entre el flujo de Presupuesto y el de Ejecución.
+  FaseOrden _fase = FaseOrden.presupuesto;
 
   @override
   void initState() {
@@ -96,6 +98,7 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
         if (o.requerimientos.isNotEmpty) _cardRequerimientos(o),
         if (o.manosObra.isNotEmpty) _cardManoObra(o),
         if (o.presupuestos.isNotEmpty) _cardPresupuestos(o),
+        if (o.horaInicioMant != null) _cardEjecucion(o),
         if (o.informes.isNotEmpty) _cardInforme(o.informes.last),
         if (o.actaEntrega != null) _cardActa(o.actaEntrega!),
       ],
@@ -172,6 +175,21 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
             ],
           );
         }).toList(),
+      );
+
+  Widget _cardEjecucion(OrdenMantenimiento o) => _card(
+        'Ejecución del mantenimiento',
+        Icons.build_circle_outlined,
+        [
+          _fila('Mantenimiento iniciado', _fecha(o.horaInicioMant)),
+          if (o.horaFinMant != null)
+            _fila('Mantenimiento finalizado', _fecha(o.horaFinMant))
+          else
+            _fila('Estado', 'En ejecución…'),
+          if (o.duracionMinutos != null) _fila('Duración', '${o.duracionMinutos} min'),
+          if (o.observacionEjecucion != null && o.observacionEjecucion!.isNotEmpty)
+            _fila('Observación', o.observacionEjecucion!),
+        ],
       );
 
   Widget _cardManoObra(OrdenMantenimiento o) => _card(
@@ -281,15 +299,6 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
   // ---------------- Barra de acciones contextuales ----------------
   Widget _barraAcciones(OrdenMantenimiento o, Usuario u) {
     final acciones = _accionesDisponibles(o, u);
-    if (acciones.isEmpty) {
-      return const SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(12),
-          child: Text('No hay acciones disponibles para tu rol en este estado.',
-              textAlign: TextAlign.center, style: TextStyle(color: Colors.black54)),
-        ),
-      );
-    }
     return SafeArea(
       child: Container(
         width: double.infinity,
@@ -298,15 +307,43 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
           color: Colors.white,
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 6)],
         ),
-        child: Wrap(spacing: 8, runSpacing: 8, children: acciones),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Selector de flujo: primero Presupuesto, luego Ejecución.
+            Row(children: [
+              Expanded(child: _btnFase('Presupuesto', FaseOrden.presupuesto)),
+              const SizedBox(width: 8),
+              Expanded(child: _btnFase('Ejecución', FaseOrden.informe)),
+            ]),
+            const SizedBox(height: 10),
+            if (acciones.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 4),
+                child: Text('No hay acciones disponibles en esta fase.',
+                    textAlign: TextAlign.center, style: TextStyle(color: Colors.black54)),
+              )
+            else
+              Wrap(spacing: 8, runSpacing: 8, children: acciones),
+          ],
+        ),
       ),
     );
   }
 
+  Widget _btnFase(String texto, FaseOrden f) {
+    final sel = _fase == f;
+    return sel
+        ? FilledButton(onPressed: () {}, child: Text(texto))
+        : OutlinedButton(
+            onPressed: () => setState(() => _fase = f), child: Text(texto));
+  }
+
   List<Widget> _accionesDisponibles(OrdenMantenimiento o, Usuario u) {
     final acciones = <Widget>[];
-    final esPres = widget.fase == FaseOrden.presupuesto;
-    final esInf = widget.fase == FaseOrden.informe;
+    final esPres = _fase == FaseOrden.presupuesto;
+    final esInf = _fase == FaseOrden.informe;
 
     // Documentos PDF (disponibles aunque la orden esté cerrada).
     if (esPres && o.presupuestos.isNotEmpty) {
@@ -381,8 +418,11 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
       }
       if (e == EstadoOrden.enMantenimiento) {
         if (o.horaFinMant == null) {
-          acciones.add(_btn('Finalizar mantenimiento', Icons.stop, () {
-            _ejecutar(() => _svc.finalizarMantenimiento(o.id));
+          acciones.add(_btn('Finalizar mantenimiento', Icons.stop, () async {
+            final obs = await mostrarFinalizarDialog(context);
+            if (obs != null) {
+              _ejecutar(() => _svc.finalizarMantenimiento(o.id, observacion: obs));
+            }
           }, tonal: true));
         }
         acciones.add(_btn('Generar informe', Icons.description, () async {

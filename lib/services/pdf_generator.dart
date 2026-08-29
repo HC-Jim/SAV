@@ -65,43 +65,68 @@ Future<void> generarInformePdf(OrdenMantenimiento o) async {
   final doc = pw.Document();
   final inf = o.informes.isNotEmpty ? o.informes.last : null;
   final insp = o.inspecciones.isNotEmpty ? o.inspecciones.last : null;
+  final p = o.presupuestos.isNotEmpty ? o.presupuestos.last : null;
 
   doc.addPage(
-    pw.Page(
+    pw.MultiPage(
       pageFormat: PdfPageFormat.a4,
-      build: (ctx) => pw.Column(
-        crossAxisAlignment: pw.CrossAxisAlignment.start,
-        children: [
-          _encabezado('INFORME TÉCNICO'),
-          pw.SizedBox(height: 12),
-          _campo('Orden', '#${o.id}'),
-          _campo('Vehículo', o.vehiculo?.descripcion ?? 'Vehículo ${o.vehiculoId}'),
-          _campo('Tipo de servicio', o.tipoServicio ?? '-'),
-          if (o.duracionMinutos != null)
-            _campo('Duración mano de obra', '${o.duracionMinutos} min'),
-          pw.SizedBox(height: 16),
-          if (insp != null) ...[
-            pw.Text('Inspección', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-            pw.SizedBox(height: 6),
-            _campo('Diagnóstico', insp.diagnostico ?? '-'),
-            _campo('Resultado', insp.resultado ?? '-'),
-            pw.SizedBox(height: 16),
-          ],
-          pw.Text('Trabajos y pruebas', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+      build: (ctx) => [
+        _encabezado('INFORME TÉCNICO'),
+        pw.SizedBox(height: 12),
+        _campo('Orden', '#${o.id}'),
+        _campo('Vehículo', o.vehiculo?.descripcion ?? 'Vehículo ${o.vehiculoId}'),
+        _campo('Tipo de servicio', o.tipoServicio ?? '-'),
+        _campo('Descripción de la actividad', o.descripcion ?? '-'),
+        pw.SizedBox(height: 16),
+
+        pw.Text('Ejecución del mantenimiento',
+            style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 6),
+        _campo('Mantenimiento iniciado', _fecha(o.horaInicioMant)),
+        _campo('Mantenimiento finalizado', _fecha(o.horaFinMant)),
+        if (o.duracionMinutos != null) _campo('Duración', '${o.duracionMinutos} min'),
+        if (o.observacionEjecucion != null && o.observacionEjecucion!.isNotEmpty)
+          _campo('Observación de ejecución', o.observacionEjecucion!),
+        pw.SizedBox(height: 16),
+
+        if (insp != null) ...[
+          pw.Text('Inspección', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 6),
-          _campo('Trabajos realizados', inf?.trabajosRealizados ?? '-'),
-          _campo('Pruebas de funcionamiento', inf?.resultadosPruebas ?? '-'),
-          if (inf?.conforme != null)
-            _campo('Conforme', inf!.conforme! ? 'Sí' : 'No'),
-          if (inf?.motivoCorreccion != null && inf!.motivoCorreccion!.isNotEmpty)
-            _campo('Motivo de corrección', inf.motivoCorreccion!),
-          pw.Spacer(),
-          _pie(),
+          _campo('Diagnóstico', insp.diagnostico ?? '-'),
+          _campo('Resultado', insp.resultado ?? '-'),
+          pw.SizedBox(height: 16),
         ],
-      ),
+
+        pw.Text('Trabajos y pruebas', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 6),
+        _campo('Trabajos realizados', inf?.trabajosRealizados ?? '-'),
+        _campo('Pruebas de funcionamiento', inf?.resultadosPruebas ?? '-'),
+        if (inf?.conforme != null) _campo('Conforme', inf!.conforme! ? 'Sí' : 'No'),
+        if (inf?.motivoCorreccion != null && inf!.motivoCorreccion!.isNotEmpty)
+          _campo('Motivo de corrección', inf.motivoCorreccion!),
+        pw.SizedBox(height: 16),
+
+        pw.Text('Gastos (presupuesto)', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+        pw.SizedBox(height: 6),
+        _total('Repuestos', p?.costoRepuestos ?? 0),
+        _total('Mano de obra', p?.costoManoObra ?? 0),
+        pw.Divider(),
+        _total('TOTAL', p?.total ?? 0, negrita: true),
+        pw.SizedBox(height: 24),
+        _pie(),
+      ],
     ),
   );
   await Printing.layoutPdf(onLayout: (_) async => doc.save());
+}
+
+/// Fecha ISO → 'dd/mm/aaaa hh:mm' (o '-').
+String _fecha(String? iso) {
+  if (iso == null) return '-';
+  final d = DateTime.tryParse(iso)?.toLocal();
+  if (d == null) return iso;
+  String dos(int n) => n.toString().padLeft(2, '0');
+  return '${dos(d.day)}/${dos(d.month)}/${d.year} ${dos(d.hour)}:${dos(d.minute)}';
 }
 
 // ---------- helpers de layout ----------

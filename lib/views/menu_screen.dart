@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/fase_orden.dart';
 import '../models/usuario.dart';
 import '../state/auth_controller.dart';
 import '../theme.dart';
@@ -10,6 +9,7 @@ import 'cliente/mis_cotizaciones_screen.dart';
 import 'cliente/mis_reservas_screen.dart';
 import 'crear_orden_screen.dart';
 import 'estado_vehiculo_screen.dart';
+import 'ordenes_list_screen.dart';
 import 'gestion/clientes_admin_screen.dart';
 import 'gestion/editar_vehiculo_screen.dart';
 import 'gestion/precios_screen.dart';
@@ -105,30 +105,23 @@ class MenuScreen extends StatelessWidget {
     // Reutilizables
     final repuestos = _OpcionMenu('Catálogo de repuestos', 'Stock y costos del almacén',
         Icons.inventory_2_outlined, () => const RepuestosScreen());
-    // Módulo 1: hasta la autorización del presupuesto.
-    final modPresupuesto = _OpcionMenu(
-        'Presupuesto',
-        'Inspección, requerimiento, mano de obra y presupuesto',
-        Icons.request_quote_outlined,
+    // Órdenes de mantenimiento: dentro de cada orden se alterna entre el flujo
+    // de Presupuesto y el de Ejecución (dos botones).
+    final ordenes = _OpcionMenu(
+        'Órdenes de mantenimiento',
+        'Ver órdenes y sus flujos (presupuesto / ejecución)',
+        Icons.assignment_outlined,
+        () => const OrdenesListScreen());
+    // Vehículos: listar la flota y ver su estado (y sus órdenes).
+    final vehiculosEstado = _OpcionMenu(
+        'Vehículos',
+        'Listar vehículos y ver su estado',
+        Icons.directions_car_outlined,
         () => ListaVehiculosScreen(
-              titulo: 'Presupuesto · elige un vehículo',
+              titulo: 'Vehículos',
               onSeleccionar: (ctx, v) async {
                 await Navigator.of(ctx).push(MaterialPageRoute(
-                    builder: (_) =>
-                        EstadoVehiculoScreen(vehiculo: v, fase: FaseOrden.presupuesto)));
-              },
-            ));
-    // Módulo 2: ejecución, pruebas e informe técnico.
-    final modInforme = _OpcionMenu(
-        'Informe Técnico',
-        'Ejecución, pruebas e informe técnico',
-        Icons.description_outlined,
-        () => ListaVehiculosScreen(
-              titulo: 'Informe Técnico · elige un vehículo',
-              onSeleccionar: (ctx, v) async {
-                await Navigator.of(ctx).push(MaterialPageRoute(
-                    builder: (_) =>
-                        EstadoVehiculoScreen(vehiculo: v, fase: FaseOrden.informe)));
+                    builder: (_) => EstadoVehiculoScreen(vehiculo: v)));
               },
             ));
     final catalogo = _OpcionMenu(
@@ -160,7 +153,7 @@ class MenuScreen extends StatelessWidget {
       ];
     }
     if (usuario.esMecanico) {
-      return [modPresupuesto, modInforme, repuestos];
+      return [ordenes, vehiculosEstado, repuestos];
     }
     if (usuario.esAdministrador) {
       return [
@@ -191,10 +184,10 @@ class MenuScreen extends StatelessWidget {
     if (usuario.esCajero) {
       return [reservasInternas];
     }
-    // Jefe de Logística: mantenimiento (2 módulos) + consulta de reservas.
+    // Jefe de Logística: mantenimiento + consulta de reservas.
     return [
-      modPresupuesto,
-      modInforme,
+      ordenes,
+      vehiculosEstado,
       _OpcionMenu('Crear orden de mantenimiento', 'Buscar vehículo e iniciar una OM',
           Icons.add_box_outlined, () => const CrearOrdenScreen()),
       repuestos,

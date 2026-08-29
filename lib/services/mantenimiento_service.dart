@@ -91,8 +91,8 @@ class MantenimientoService {
   Future<void> iniciarMantenimiento(int ordenId) =>
       _api.patch('$_base/ordenes/$ordenId/iniciar');
 
-  Future<void> finalizarMantenimiento(int ordenId) =>
-      _api.patch('$_base/ordenes/$ordenId/finalizar');
+  Future<void> finalizarMantenimiento(int ordenId, {String? observacion}) =>
+      _api.patch('$_base/ordenes/$ordenId/finalizar', {'observacion': observacion});
 
   Future<void> generarInforme(int ordenId, Map<String, dynamic> datos) =>
       _api.post('$_base/ordenes/$ordenId/informe', datos);

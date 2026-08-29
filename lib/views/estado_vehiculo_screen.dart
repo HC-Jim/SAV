@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import '../models/fase_orden.dart';
 import '../models/orden_mantenimiento.dart';
 import '../models/vehiculo.dart';
 import '../services/mantenimiento_service.dart';
 import 'orden_detail_screen.dart';
 
 /// Estado de un vehículo: su estado actual y las órdenes de mantenimiento
-/// asociadas. Se llega desde los módulos "Presupuesto" / "Informe Técnico".
+/// asociadas. Se llega desde el apartado "Vehículos".
 class EstadoVehiculoScreen extends StatefulWidget {
   final Vehiculo vehiculo;
-  final FaseOrden fase;
-  const EstadoVehiculoScreen({super.key, required this.vehiculo, required this.fase});
+  const EstadoVehiculoScreen({super.key, required this.vehiculo});
 
   @override
   State<EstadoVehiculoScreen> createState() => _EstadoVehiculoScreenState();
@@ -117,8 +115,7 @@ class _EstadoVehiculoScreenState extends State<EstadoVehiculoScreen> {
                             onTap: () async {
                               await Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (_) =>
-                                      OrdenDetailScreen(ordenId: o.id, fase: widget.fase),
+                                  builder: (_) => OrdenDetailScreen(ordenId: o.id),
                                 ),
                               );
                               _cargar();

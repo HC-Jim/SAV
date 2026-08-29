@@ -127,6 +127,7 @@ class OrdenMantenimiento {
   final String estado;
   final String? horaInicioMant;
   final String? horaFinMant;
+  final String? observacionEjecucion;
   final int? duracionMinutos;
   final String? fechaCreacion;
   final Vehiculo? vehiculo;
@@ -147,6 +148,7 @@ class OrdenMantenimiento {
         estado = j['estado'],
         horaInicioMant = j['hora_inicio_mant'],
         horaFinMant = j['hora_fin_mant'],
+        observacionEjecucion = j['observacion_ejecucion'],
         duracionMinutos = j['duracion_minutos'],
         fechaCreacion = j['fecha_creacion'],
         vehiculo = j['vehiculo'] != null ? Vehiculo.fromJson(j['vehiculo']) : null,
