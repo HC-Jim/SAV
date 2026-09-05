@@ -4,6 +4,7 @@ import '../models/usuario.dart';
 import '../models/vehiculo.dart';
 import '../services/api_client.dart';
 import '../services/mantenimiento_service.dart';
+import '../widgets/selector_mecanico.dart';
 import '../widgets/selector_vehiculo.dart';
 
 /// Formulario del Jefe de Logística para crear una Orden de Mantenimiento.
@@ -21,10 +22,9 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
   final _descCtrl = TextEditingController();
 
   late Future<void> _carga;
-  List<Usuario> _mecanicos = [];
   List<TipoMantenimiento> _tipos = [];
   Vehiculo? _vehiculo;
-  int? _mecanicoId;
+  Usuario? _mecanico;
   int? _tipoId;
   bool _guardando = false;
 
@@ -36,14 +36,10 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
   }
 
   Future<void> _cargarDatos() async {
-    // El vehículo se elige con el SelectorVehiculo («include» Buscar Vehículo);
-    // aquí se cargan los mecánicos y el catálogo de tipos de mantenimiento.
-    final resultados = await Future.wait([
-      _svc.listarMecanicos(),
-      _svc.tiposMantenimiento(),
-    ]);
-    _mecanicos = resultados[0] as List<Usuario>;
-    _tipos = resultados[1] as List<TipoMantenimiento>;
+    // El vehículo y el mecánico se eligen con sus buscadores reutilizables
+    // («include» Buscar Vehículo / Buscar Mecánico). Aquí solo se necesita el
+    // catálogo de tipos de mantenimiento.
+    _tipos = await _svc.tiposMantenimiento();
   }
 
   @override
@@ -64,7 +60,7 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
     try {
       await _svc.crearOrden(
         vehiculoId: _vehiculo!.id,
-        mecanicoId: _mecanicoId,
+        mecanicoId: _mecanico?.id,
         tipoMantenimientoId: _tipoId!,
         descripcion: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
       );
@@ -103,17 +99,10 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
                   onChanged: (v) => setState(() => _vehiculo = v),
                 ),
                 const SizedBox(height: 16),
-                DropdownButtonFormField<int>(
-                  initialValue: _mecanicoId,
-                  decoration: const InputDecoration(
-                    labelText: 'Mecánico asignado (opcional)',
-                    prefixIcon: Icon(Icons.engineering),
-                  ),
-                  items: _mecanicos
-                      .map((m) => DropdownMenuItem(
-                          value: m.id, child: Text(m.nombre)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _mecanicoId = v),
+                SelectorMecanico(
+                  value: _mecanico,
+                  label: 'Mecánico asignado (opcional)',
+                  onChanged: (m) => setState(() => _mecanico = m),
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<int>(
