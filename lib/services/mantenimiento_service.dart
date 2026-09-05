@@ -76,6 +76,10 @@ class MantenimientoService {
   Future<void> registrarInspeccion(int ordenId, Map<String, dynamic> datos) =>
       _api.post('$_base/ordenes/$ordenId/inspeccion', datos);
 
+  /// Inspección + requerimiento + mano de obra + presupuesto en un solo paso.
+  Future<void> procesarInspeccion(int ordenId, Map<String, dynamic> datos) =>
+      _api.post('$_base/ordenes/$ordenId/inspeccion-completa', datos);
+
   Future<void> crearRequerimiento(int ordenId, List<Map<String, dynamic>> items) =>
       _api.post('$_base/ordenes/$ordenId/requerimientos', {'items': items});
 

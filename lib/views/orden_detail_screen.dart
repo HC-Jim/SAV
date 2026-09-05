@@ -8,11 +8,8 @@ import '../services/mantenimiento_service.dart';
 import '../services/pdf_generator.dart';
 import '../state/auth_controller.dart';
 import '../widgets/estado_chip.dart';
-import 'dialogs/inspeccion_dialog.dart';
-import 'dialogs/requerimiento_dialog.dart';
-import 'dialogs/mano_obra_dialog.dart';
+import 'dialogs/inspeccion_completa_dialog.dart';
 import 'dialogs/finalizar_dialog.dart';
-import 'dialogs/presupuesto_dialog.dart';
 import 'dialogs/informe_dialog.dart';
 import 'dialogs/decision_dialog.dart';
 
@@ -312,53 +309,13 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
     final e = o.estado;
 
     if (u.esMecanico && esPres) {
+      // Un solo formulario: inspección + requerimiento + mano de obra →
+      // genera el presupuesto (o cierra la orden si es sin hallazgos).
       if (e == EstadoOrden.pendienteInspeccion || e == EstadoOrden.inspeccionPostergada) {
         acciones.add(_btn('Registrar inspección', Icons.search, () async {
-          final datos = await mostrarInspeccionDialog(context);
-          if (datos != null) _ejecutar(() => _svc.registrarInspeccion(o.id, datos));
+          final datos = await mostrarInspeccionCompletaDialog(context, _svc);
+          if (datos != null) _ejecutar(() => _svc.procesarInspeccion(o.id, datos));
         }));
-      }
-      if (e == EstadoOrden.inspeccionCompleta) {
-        final insp = o.inspecciones.isNotEmpty ? o.inspecciones.last : null;
-        final sinHallazgos = insp?.resultado == 'SIN_HALLAZGOS';
-        final necesita = insp?.necesitaRepuestos ?? false;
-        final tieneReq = o.tieneRequerimiento;
-        final reqListo = !necesita || tieneReq;
-        final tieneMO = o.tieneManoObra;
-
-        if (sinHallazgos) {
-          // Sin hallazgos: no requiere presupuesto, inicia directamente.
-          acciones.add(_btn('Iniciar (sin hallazgos)', Icons.play_arrow, () {
-            _ejecutar(() => _svc.iniciarMantenimiento(o.id));
-          }, tonal: true));
-        } else {
-          // Con hallazgos: (requerimiento si necesita) + mano de obra → presupuesto.
-          if (necesita && !tieneReq) {
-            acciones.add(_btn('Requerimiento repuestos', Icons.add_shopping_cart, () async {
-              final items = await mostrarRequerimientoDialog(context, _svc);
-              if (items != null && items.isNotEmpty) {
-                _ejecutar(() => _svc.crearRequerimiento(o.id, items));
-              }
-            }));
-          }
-          if (!tieneMO) {
-            acciones.add(_btn('Registrar mano de obra', Icons.build, () async {
-              final datos = await mostrarManoObraDialog(context);
-              if (datos != null) {
-                _ejecutar(() => _svc.registrarManoObra(o.id,
-                    costo: (datos['costo'] as num).toDouble(),
-                    observacion: datos['observacion'] as String?));
-              }
-            }));
-          }
-          // Requerimiento (si aplica) y mano de obra registrados → generar presupuesto.
-          if (reqListo && tieneMO) {
-            acciones.add(_btn('Generar presupuesto', Icons.request_quote, () async {
-              final datos = await mostrarPresupuestoDialog(context, o);
-              if (datos != null) _ejecutar(() => _svc.generarPresupuesto(o.id, datos));
-            }));
-          }
-        }
       }
     }
 
