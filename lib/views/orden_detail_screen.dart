@@ -118,7 +118,7 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-              _fila('Tipo de servicio', o.tipoServicio ?? '-'),
+              _fila('Tipo de mantenimiento', o.tipoNombre),
               if (o.descripcion != null && o.descripcion!.isNotEmpty)
                 _fila('Descripción', o.descripcion!),
               _fila('Creada', _fecha(o.fechaCreacion)),

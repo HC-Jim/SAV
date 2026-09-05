@@ -58,7 +58,7 @@ class _OrdenesListScreenState extends State<OrdenesListScreen> {
                 child: ListTile(
                   leading: CircleAvatar(child: Text('#${o.id}')),
                   title: Text(o.vehiculo?.descripcion ?? 'Vehículo ${o.vehiculoId}'),
-                  subtitle: Text(o.tipoServicio ?? '-'),
+                  subtitle: Text(o.tipoNombre),
                   trailing: EstadoChip(o.estado),
                   onTap: () async {
                     await Navigator.of(context).push(MaterialPageRoute(

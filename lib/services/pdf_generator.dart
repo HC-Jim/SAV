@@ -21,7 +21,7 @@ Future<void> generarPresupuestoPdf(OrdenMantenimiento o) async {
           pw.SizedBox(height: 12),
           _campo('Orden', '#${o.id}'),
           _campo('Vehículo', o.vehiculo?.descripcion ?? 'Vehículo ${o.vehiculoId}'),
-          _campo('Tipo de servicio', o.tipoServicio ?? '-'),
+          _campo('Tipo de mantenimiento', o.tipoNombre),
           pw.SizedBox(height: 16),
           pw.Text('Repuestos', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
           pw.SizedBox(height: 6),

@@ -1,6 +1,7 @@
 import '../config/api_config.dart';
 import '../models/orden_mantenimiento.dart';
 import '../models/repuesto.dart';
+import '../models/tipo_mantenimiento.dart';
 import '../models/usuario.dart';
 import '../models/vehiculo.dart';
 import 'api_client.dart';
@@ -34,6 +35,11 @@ class MantenimientoService {
     return data.map((e) => Repuesto.fromJson(e)).toList();
   }
 
+  Future<List<TipoMantenimiento>> tiposMantenimiento() async {
+    final data = await _api.get('$_base/tipos-mantenimiento') as List;
+    return data.map((e) => TipoMantenimiento.fromJson(e)).toList();
+  }
+
   /// Comprar más stock de un repuesto del catálogo (Jefe de Logística).
   Future<void> comprarRepuesto(int repuestoId, int cantidad) =>
       _api.patch('$_base/repuestos/$repuestoId/comprar', {'cantidad': cantidad});
@@ -47,13 +53,13 @@ class MantenimientoService {
   Future<void> crearOrden({
     required int vehiculoId,
     int? mecanicoId,
-    required String tipoServicio,
+    required int tipoMantenimientoId,
     String? descripcion,
   }) async {
     await _api.post('$_base/ordenes', {
       'vehiculo_id': vehiculoId,
       'mecanico_id': mecanicoId,
-      'tipo_servicio': tipoServicio,
+      'tipo_mantenimiento_id': tipoMantenimientoId,
       'descripcion': descripcion,
     });
   }

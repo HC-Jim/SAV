@@ -122,7 +122,9 @@ class OrdenMantenimiento {
   final int id;
   final int vehiculoId;
   final int? mecanicoId;
+  final int? tipoMantenimientoId;
   final String? tipoServicio;
+  final Map<String, dynamic>? tipoMantenimiento;
   final String? descripcion;
   final String estado;
   final String? horaInicioMant;
@@ -143,7 +145,9 @@ class OrdenMantenimiento {
       : id = j['id'],
         vehiculoId = j['vehiculo_id'],
         mecanicoId = j['mecanico_id'],
+        tipoMantenimientoId = j['tipo_mantenimiento_id'],
         tipoServicio = j['tipo_servicio'],
+        tipoMantenimiento = j['tipo_mantenimiento'] as Map<String, dynamic>?,
         descripcion = j['descripcion'],
         estado = j['estado'],
         horaInicioMant = j['hora_inicio_mant'],
@@ -170,6 +174,10 @@ class OrdenMantenimiento {
         actaEntrega = j['acta_entrega'] as Map<String, dynamic>?;
 
   bool get esFinal => EstadoOrden.finales.contains(estado);
+
+  /// Nombre del tipo de mantenimiento (del catálogo, con respaldo al texto).
+  String get tipoNombre =>
+      (tipoMantenimiento?['nombre'] as String?) ?? tipoServicio ?? '-';
 
   /// Presupuesto pendiente de decisión (si existe).
   Presupuesto? get presupuestoPendiente =>

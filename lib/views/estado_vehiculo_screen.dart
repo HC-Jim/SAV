@@ -110,7 +110,7 @@ class _EstadoVehiculoScreenState extends State<EstadoVehiculoScreen> {
                     .map((o) => Card(
                           child: ListTile(
                             leading: CircleAvatar(child: Text('#${o.id}')),
-                            title: Text(o.tipoServicio ?? 'Orden #${o.id}'),
+                            title: Text(o.tipoNombre),
                             subtitle: Text(EstadoOrden.legible(o.estado)),
                             trailing: const Icon(Icons.chevron_right),
                             onTap: () async {

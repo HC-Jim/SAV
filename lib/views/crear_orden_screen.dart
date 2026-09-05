@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/tipo_mantenimiento.dart';
 import '../models/usuario.dart';
 import '../models/vehiculo.dart';
 import '../services/api_client.dart';
@@ -17,13 +18,14 @@ class CrearOrdenScreen extends StatefulWidget {
 class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
   final _svc = MantenimientoService();
   final _formKey = GlobalKey<FormState>();
-  final _tipoCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
 
   late Future<void> _carga;
   List<Usuario> _mecanicos = [];
+  List<TipoMantenimiento> _tipos = [];
   Vehiculo? _vehiculo;
   int? _mecanicoId;
+  int? _tipoId;
   bool _guardando = false;
 
   @override
@@ -35,13 +37,17 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
 
   Future<void> _cargarDatos() async {
     // El vehículo se elige con el SelectorVehiculo («include» Buscar Vehículo);
-    // aquí solo hace falta la lista de mecánicos.
-    _mecanicos = await _svc.listarMecanicos();
+    // aquí se cargan los mecánicos y el catálogo de tipos de mantenimiento.
+    final resultados = await Future.wait([
+      _svc.listarMecanicos(),
+      _svc.tiposMantenimiento(),
+    ]);
+    _mecanicos = resultados[0] as List<Usuario>;
+    _tipos = resultados[1] as List<TipoMantenimiento>;
   }
 
   @override
   void dispose() {
-    _tipoCtrl.dispose();
     _descCtrl.dispose();
     super.dispose();
   }
@@ -59,7 +65,7 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
       await _svc.crearOrden(
         vehiculoId: _vehiculo!.id,
         mecanicoId: _mecanicoId,
-        tipoServicio: _tipoCtrl.text.trim(),
+        tipoMantenimientoId: _tipoId!,
         descripcion: _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
       );
       if (!mounted) return;
@@ -110,15 +116,21 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
                   onChanged: (v) => setState(() => _mecanicoId = v),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: _tipoCtrl,
+                DropdownButtonFormField<int>(
+                  initialValue: _tipoId,
+                  isExpanded: true,
                   decoration: const InputDecoration(
-                    labelText: 'Tipo de servicio *',
-                    hintText: 'Ej. Preventivo 50,000 km',
+                    labelText: 'Tipo de mantenimiento *',
                     prefixIcon: Icon(Icons.build),
                   ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Obligatorio' : null,
+                  items: _tipos
+                      .map((t) => DropdownMenuItem(
+                            value: t.id,
+                            child: Text(t.nombre),
+                          ))
+                      .toList(),
+                  onChanged: (v) => setState(() => _tipoId = v),
+                  validator: (v) => v == null ? 'Selecciona un tipo' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
