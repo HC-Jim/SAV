@@ -154,20 +154,8 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Requerimiento #${r.id}',
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
-                  Chip(
-                    label: Text(r.estado),
-                    visualDensity: VisualDensity.compact,
-                    backgroundColor: r.estado == 'APROBADO'
-                        ? Colors.green.withValues(alpha: 0.15)
-                        : Colors.orange.withValues(alpha: 0.15),
-                  ),
-                ],
-              ),
+              Text('Requerimiento #${r.id}',
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
               ...r.items.map((it) => Text(
                   '• ${it.nombre}  x${it.cantidad}  (S/ ${it.precioUnitario.toStringAsFixed(2)})')),
               const SizedBox(height: 8),
@@ -198,20 +186,8 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('S/ ${m.costo.toStringAsFixed(2)}',
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
-                  Chip(
-                    label: Text(m.estado),
-                    visualDensity: VisualDensity.compact,
-                    backgroundColor: m.estado == 'APROBADO'
-                        ? Colors.green.withValues(alpha: 0.15)
-                        : Colors.orange.withValues(alpha: 0.15),
-                  ),
-                ],
-              ),
+              Text('S/ ${m.costo.toStringAsFixed(2)}',
+                  style: const TextStyle(fontWeight: FontWeight.w600)),
               if (m.observacion != null && m.observacion!.isNotEmpty)
                 Text(m.observacion!),
               const SizedBox(height: 4),
@@ -346,10 +322,9 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
         final insp = o.inspecciones.isNotEmpty ? o.inspecciones.last : null;
         final sinHallazgos = insp?.resultado == 'SIN_HALLAZGOS';
         final necesita = insp?.necesitaRepuestos ?? false;
-        final tieneReq = o.requerimientos.isNotEmpty;
-        final reqListo = !necesita || o.tieneRequerimientoAprobado;
-        final tieneMO = o.manosObra.isNotEmpty;
-        final moAprobada = o.tieneManoObraAprobada;
+        final tieneReq = o.tieneRequerimiento;
+        final reqListo = !necesita || tieneReq;
+        final tieneMO = o.tieneManoObra;
 
         if (sinHallazgos) {
           // Sin hallazgos: no requiere presupuesto, inicia directamente.
@@ -376,8 +351,8 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
               }
             }));
           }
-          // Requerimiento (si aplica) y mano de obra aprobados → generar presupuesto.
-          if (reqListo && moAprobada) {
+          // Requerimiento (si aplica) y mano de obra registrados → generar presupuesto.
+          if (reqListo && tieneMO) {
             acciones.add(_btn('Generar presupuesto', Icons.request_quote, () async {
               final datos = await mostrarPresupuestoDialog(context, o);
               if (datos != null) _ejecutar(() => _svc.generarPresupuesto(o.id, datos));
@@ -416,18 +391,7 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
     }
 
     if (u.esJefe && esPres) {
-      if (e == EstadoOrden.inspeccionCompleta || e == EstadoOrden.pendienteAutorizacion) {
-        for (final r in o.requerimientosPendientes) {
-          acciones.add(_btn('Aprobar req. #${r.id}', Icons.check_circle_outline, () {
-            _ejecutar(() => _svc.aprobarRequerimiento(r.id));
-          }, tonal: true));
-        }
-        for (final m in o.manosObraPendientes) {
-          acciones.add(_btn('Aprobar mano de obra', Icons.check_circle_outline, () {
-            _ejecutar(() => _svc.aprobarManoObra(m.id));
-          }, tonal: true));
-        }
-      }
+      // El Jefe solo aprueba/rechaza el presupuesto final.
       if (e == EstadoOrden.pendienteAutorizacion && o.presupuestoPendiente != null) {
         final p = o.presupuestoPendiente!;
         acciones.add(_btn('Autorizar presupuesto', Icons.check_circle, () {

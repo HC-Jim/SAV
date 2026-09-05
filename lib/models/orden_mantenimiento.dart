@@ -177,21 +177,11 @@ class OrdenMantenimiento {
           ? presupuestos.firstWhere((p) => p.estado == 'PENDIENTE')
           : (presupuestos.isNotEmpty ? presupuestos.last : null);
 
-  /// Requerimientos aún no aprobados.
-  List<Requerimiento> get requerimientosPendientes =>
-      requerimientos.where((r) => r.estado == 'SOLICITADO').toList();
+  /// El Mecánico registra requerimiento y mano de obra; el Jefe aprueba el
+  /// presupuesto final (ya no hay aprobación por partes).
+  bool get tieneRequerimiento => requerimientos.isNotEmpty;
 
-  bool get tieneRequerimientoAprobado =>
-      requerimientos.any((r) => r.estado == 'APROBADO');
+  bool get tieneManoObra => manosObra.isNotEmpty;
 
-  /// Mano de obra aún no aprobada.
-  List<ManoObra> get manosObraPendientes =>
-      manosObra.where((m) => m.estado == 'SOLICITADO').toList();
-
-  bool get tieneManoObraAprobada => manosObra.any((m) => m.estado == 'APROBADO');
-
-  ManoObra? get manoObraAprobada =>
-      manosObra.where((m) => m.estado == 'APROBADO').isNotEmpty
-          ? manosObra.firstWhere((m) => m.estado == 'APROBADO')
-          : null;
+  ManoObra? get manoObra => manosObra.isNotEmpty ? manosObra.first : null;
 }

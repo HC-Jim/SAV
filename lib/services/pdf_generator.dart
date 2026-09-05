@@ -7,8 +7,9 @@ import '../models/orden_mantenimiento.dart';
 Future<void> generarPresupuestoPdf(OrdenMantenimiento o) async {
   final doc = pw.Document();
   final p = o.presupuestos.isNotEmpty ? o.presupuestos.last : null;
-  final aprob = o.requerimientos.where((r) => r.estado == 'APROBADO');
-  final items = aprob.isEmpty ? const <RepuestoItem>[] : aprob.first.items;
+  final items = o.requerimientos.isEmpty
+      ? const <RepuestoItem>[]
+      : o.requerimientos.last.items;
 
   doc.addPage(
     pw.Page(

@@ -18,17 +18,15 @@ class _PresupuestoScreen extends StatelessWidget {
   final OrdenMantenimiento orden;
   const _PresupuestoScreen({required this.orden});
 
-  List<RepuestoItem> get _items {
-    final aprob = orden.requerimientos.where((r) => r.estado == 'APROBADO');
-    return aprob.isEmpty ? const [] : aprob.first.items;
-  }
+  List<RepuestoItem> get _items =>
+      orden.requerimientos.isEmpty ? const [] : orden.requerimientos.last.items;
 
   double get _totalRepuestos =>
       _items.fold(0.0, (a, it) => a + it.precioUnitario * it.cantidad);
 
   @override
   Widget build(BuildContext context) {
-    final manoObra = orden.manoObraAprobada;
+    final manoObra = orden.manoObra;
     final costoManoObra = manoObra?.costo ?? 0;
     final total = _totalRepuestos + costoManoObra;
 
@@ -37,7 +35,7 @@ class _PresupuestoScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('Repuestos aprobados',
+          const Text('Repuestos',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 8),
           if (_items.isEmpty)
@@ -58,7 +56,7 @@ class _PresupuestoScreen extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 16),
-          const Text('Mano de obra aprobada',
+          const Text('Mano de obra',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 8),
           Card(

@@ -58,17 +58,11 @@ class MantenimientoService {
     });
   }
 
-  Future<void> aprobarRequerimiento(int requerimientoId) =>
-      _api.patch('$_base/requerimientos/$requerimientoId/aprobar');
-
   // ---------- Mano de obra ----------
   Future<void> registrarManoObra(int ordenId,
           {required double costo, String? observacion}) =>
       _api.post('$_base/ordenes/$ordenId/mano-obra',
           {'costo': costo, 'observacion': observacion});
-
-  Future<void> aprobarManoObra(int manoObraId) =>
-      _api.patch('$_base/mano-obra/$manoObraId/aprobar');
 
   Future<void> decidirPresupuesto(int presupuestoId, bool autorizado, {String? motivo}) =>
       _api.patch('$_base/presupuestos/$presupuestoId/decidir',
