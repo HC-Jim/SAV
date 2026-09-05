@@ -5,11 +5,12 @@ import '../services/mantenimiento_service.dart';
 import '../widgets/estado_chip.dart';
 import 'orden_detail_screen.dart';
 
-/// Lista de órdenes de una fase (Presupuesto o Ejecución). Al tocar una orden
-/// se abre su detalle en esa fase.
+/// Buscar orden de mantenimiento (caso de uso incluido tanto por «Generar
+/// presupuesto» como por «Ejecutar mantenimiento»). Lista todas las órdenes;
+/// al tocar una, según su estado se abre la interfaz de Presupuesto o la de
+/// Ejecución de mantenimiento (son pantallas distintas).
 class OrdenesListScreen extends StatefulWidget {
-  final FaseOrden fase;
-  const OrdenesListScreen({super.key, required this.fase});
+  const OrdenesListScreen({super.key});
 
   @override
   State<OrdenesListScreen> createState() => _OrdenesListScreenState();
@@ -19,24 +20,19 @@ class _OrdenesListScreenState extends State<OrdenesListScreen> {
   final _svc = MantenimientoService();
   late Future<List<OrdenMantenimiento>> _futuro;
 
-  bool get _esPresupuesto => widget.fase == FaseOrden.presupuesto;
-
   @override
   void initState() {
     super.initState();
     _cargar();
   }
 
-  // Solo las órdenes que están en la fase indicada.
-  void _cargar() => setState(() => _futuro = _svc.listarOrdenes().then(
-        (todas) => todas.where((o) => faseDeEstado(o.estado) == widget.fase).toList(),
-      ));
+  void _cargar() => setState(() => _futuro = _svc.listarOrdenes());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_esPresupuesto ? 'Presupuesto' : 'Ejecución de mantenimiento'),
+        title: const Text('Buscar orden de mantenimiento'),
         actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _cargar)],
       ),
       body: FutureBuilder<List<OrdenMantenimiento>>(
@@ -48,16 +44,16 @@ class _OrdenesListScreenState extends State<OrdenesListScreen> {
           if (snap.hasError) return Center(child: Text('${snap.error}'));
           final ordenes = snap.data ?? [];
           if (ordenes.isEmpty) {
-            return Center(
-                child: Text(_esPresupuesto
-                    ? 'No hay órdenes en fase de presupuesto.'
-                    : 'No hay órdenes en fase de ejecución.'));
+            return const Center(child: Text('No hay órdenes de mantenimiento.'));
           }
           return ListView.builder(
             padding: const EdgeInsets.all(12),
             itemCount: ordenes.length,
             itemBuilder: (context, i) {
               final o = ordenes[i];
+              // La fase (Presupuesto o Ejecución) se deduce del estado de la
+              // orden y determina qué interfaz de detalle se abre.
+              final fase = faseDeEstado(o.estado);
               return Card(
                 child: ListTile(
                   leading: CircleAvatar(child: Text('#${o.id}')),
@@ -66,7 +62,7 @@ class _OrdenesListScreenState extends State<OrdenesListScreen> {
                   trailing: EstadoChip(o.estado),
                   onTap: () async {
                     await Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => OrdenDetailScreen(ordenId: o.id, fase: widget.fase),
+                      builder: (_) => OrdenDetailScreen(ordenId: o.id, fase: fase),
                     ));
                     _cargar();
                   },

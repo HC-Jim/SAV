@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/fase_orden.dart';
 import '../models/usuario.dart';
 import '../state/auth_controller.dart';
 import '../theme.dart';
@@ -109,19 +108,13 @@ class MenuScreen extends StatelessWidget {
         Icons.inventory_2_outlined, () => const RepuestosScreen());
     final precios = _OpcionMenu('Catálogo de precios', 'Consultar precios por día del vehículo',
         Icons.sell_outlined, () => const PreciosScreen());
-    // Módulo 1: fase de Presupuesto (inspección, requerimiento, mano de obra,
-    // presupuesto y su aprobación/rechazo).
-    final modPresupuesto = _OpcionMenu(
-        'Presupuesto',
-        'Inspección, repuestos, mano de obra y presupuesto',
-        Icons.request_quote_outlined,
-        () => const OrdenesListScreen(fase: FaseOrden.presupuesto));
-    // Módulo 2: fase de Ejecución (ejecutar, pruebas, informe, conformidad).
-    final modEjecucion = _OpcionMenu(
-        'Ejecución de mantenimiento',
-        'Ejecución, pruebas, informe técnico y conformidad',
+    // Órdenes de mantenimiento: buscar una orden y, según su estado, seguir el
+    // flujo de Presupuesto o el de Ejecución (cada uno con su propia interfaz).
+    final ordenesMantenimiento = _OpcionMenu(
+        'Buscar orden de mantenimiento',
+        'Presupuesto o ejecución según el estado de la orden',
         Icons.build_outlined,
-        () => const OrdenesListScreen(fase: FaseOrden.informe));
+        () => const OrdenesListScreen());
     // Vehículos: listar la flota y ver su estado (y sus órdenes).
     final vehiculosEstado = _OpcionMenu(
         'Vehículos',
@@ -164,7 +157,7 @@ class MenuScreen extends StatelessWidget {
       ];
     }
     if (usuario.esMecanico) {
-      return [modPresupuesto, modEjecucion, vehiculosEstado, repuestos];
+      return [ordenesMantenimiento, vehiculosEstado, repuestos];
     }
     if (usuario.esAdministrador) {
       return [
@@ -202,8 +195,7 @@ class MenuScreen extends StatelessWidget {
     }
     // Jefe de Logística: mantenimiento (2 fases) + consulta de reservas.
     return [
-      modPresupuesto,
-      modEjecucion,
+      ordenesMantenimiento,
       vehiculosEstado,
       _OpcionMenu('Crear orden de mantenimiento', 'Buscar vehículo e iniciar una OM',
           Icons.add_box_outlined, () => const CrearOrdenScreen()),
