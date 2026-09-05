@@ -20,7 +20,8 @@ import 'dialogs/decision_dialog.dart';
 /// según el rol del usuario y el estado actual de la orden.
 class OrdenDetailScreen extends StatefulWidget {
   final int ordenId;
-  const OrdenDetailScreen({super.key, required this.ordenId});
+  final FaseOrden fase;
+  const OrdenDetailScreen({super.key, required this.ordenId, required this.fase});
 
   @override
   State<OrdenDetailScreen> createState() => _OrdenDetailScreenState();
@@ -30,8 +31,6 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
   final _svc = MantenimientoService();
   late Future<OrdenMantenimiento> _futuro;
   bool _procesando = false;
-  // Fase activa: el usuario alterna entre el flujo de Presupuesto y el de Ejecución.
-  FaseOrden _fase = FaseOrden.presupuesto;
 
   @override
   void initState() {
@@ -307,43 +306,21 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
           color: Colors.white,
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 6)],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Selector de flujo: primero Presupuesto, luego Ejecución.
-            Row(children: [
-              Expanded(child: _btnFase('Presupuesto', FaseOrden.presupuesto)),
-              const SizedBox(width: 8),
-              Expanded(child: _btnFase('Ejecución', FaseOrden.informe)),
-            ]),
-            const SizedBox(height: 10),
-            if (acciones.isEmpty)
-              const Padding(
+        child: acciones.isEmpty
+            ? const Padding(
                 padding: EdgeInsets.symmetric(vertical: 4),
                 child: Text('No hay acciones disponibles en esta fase.',
                     textAlign: TextAlign.center, style: TextStyle(color: Colors.black54)),
               )
-            else
-              Wrap(spacing: 8, runSpacing: 8, children: acciones),
-          ],
-        ),
+            : Wrap(spacing: 8, runSpacing: 8, children: acciones),
       ),
     );
   }
 
-  Widget _btnFase(String texto, FaseOrden f) {
-    final sel = _fase == f;
-    return sel
-        ? FilledButton(onPressed: () {}, child: Text(texto))
-        : OutlinedButton(
-            onPressed: () => setState(() => _fase = f), child: Text(texto));
-  }
-
   List<Widget> _accionesDisponibles(OrdenMantenimiento o, Usuario u) {
     final acciones = <Widget>[];
-    final esPres = _fase == FaseOrden.presupuesto;
-    final esInf = _fase == FaseOrden.informe;
+    final esPres = widget.fase == FaseOrden.presupuesto;
+    final esInf = widget.fase == FaseOrden.informe;
 
     // Documentos PDF (disponibles aunque la orden esté cerrada).
     if (esPres && o.presupuestos.isNotEmpty) {

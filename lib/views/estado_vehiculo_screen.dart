@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/fase_orden.dart';
 import '../models/orden_mantenimiento.dart';
 import '../models/vehiculo.dart';
 import '../services/mantenimiento_service.dart';
@@ -115,7 +116,8 @@ class _EstadoVehiculoScreenState extends State<EstadoVehiculoScreen> {
                             onTap: () async {
                               await Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (_) => OrdenDetailScreen(ordenId: o.id),
+                                  builder: (_) => OrdenDetailScreen(
+                                      ordenId: o.id, fase: faseDeEstado(o.estado)),
                                 ),
                               );
                               _cargar();

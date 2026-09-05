@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import '../models/fase_orden.dart';
 import '../models/orden_mantenimiento.dart';
 import '../services/mantenimiento_service.dart';
 import '../widgets/estado_chip.dart';
 import 'orden_detail_screen.dart';
 
-/// Lista de órdenes de mantenimiento. Al tocar una orden se abre su detalle,
-/// donde se alterna entre el flujo de Presupuesto y el de Ejecución.
+/// Lista de órdenes de una fase (Presupuesto o Ejecución). Al tocar una orden
+/// se abre su detalle en esa fase.
 class OrdenesListScreen extends StatefulWidget {
-  const OrdenesListScreen({super.key});
+  final FaseOrden fase;
+  const OrdenesListScreen({super.key, required this.fase});
+
   @override
   State<OrdenesListScreen> createState() => _OrdenesListScreenState();
 }
@@ -15,20 +18,8 @@ class OrdenesListScreen extends StatefulWidget {
 class _OrdenesListScreenState extends State<OrdenesListScreen> {
   final _svc = MantenimientoService();
   late Future<List<OrdenMantenimiento>> _futuro;
-  String _filtro = '';
 
-  static const _estados = [
-    '',
-    EstadoOrden.pendienteInspeccion,
-    EstadoOrden.inspeccionCompleta,
-    EstadoOrden.pendienteAutorizacion,
-    EstadoOrden.presupuestoAutorizado,
-    EstadoOrden.enMantenimiento,
-    EstadoOrden.pendienteConformidad,
-    EstadoOrden.correccionRequerida,
-    EstadoOrden.cerrado,
-    EstadoOrden.cerradaPorRechazo,
-  ];
+  bool get _esPresupuesto => widget.fase == FaseOrden.presupuesto;
 
   @override
   void initState() {
@@ -36,75 +27,54 @@ class _OrdenesListScreenState extends State<OrdenesListScreen> {
     _cargar();
   }
 
-  void _cargar() =>
-      setState(() => _futuro = _svc.listarOrdenes(estado: _filtro.isEmpty ? null : _filtro));
+  // Solo las órdenes que están en la fase indicada.
+  void _cargar() => setState(() => _futuro = _svc.listarOrdenes().then(
+        (todas) => todas.where((o) => faseDeEstado(o.estado) == widget.fase).toList(),
+      ));
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Órdenes de mantenimiento'),
+        title: Text(_esPresupuesto ? 'Presupuesto' : 'Ejecución de mantenimiento'),
         actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _cargar)],
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-            child: DropdownButtonFormField<String>(
-              initialValue: _filtro,
-              decoration: const InputDecoration(
-                labelText: 'Filtrar por estado',
-                prefixIcon: Icon(Icons.filter_list),
-              ),
-              items: _estados
-                  .map((e) => DropdownMenuItem(
-                        value: e,
-                        child: Text(e.isEmpty ? 'Todos' : EstadoOrden.legible(e)),
-                      ))
-                  .toList(),
-              onChanged: (v) {
-                _filtro = v ?? '';
-                _cargar();
-              },
-            ),
-          ),
-          Expanded(
-            child: FutureBuilder<List<OrdenMantenimiento>>(
-              future: _futuro,
-              builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snap.hasError) return Center(child: Text('${snap.error}'));
-                final ordenes = snap.data ?? [];
-                if (ordenes.isEmpty) {
-                  return const Center(child: Text('No hay órdenes.'));
-                }
-                return ListView.builder(
-                  padding: const EdgeInsets.all(12),
-                  itemCount: ordenes.length,
-                  itemBuilder: (context, i) {
-                    final o = ordenes[i];
-                    return Card(
-                      child: ListTile(
-                        leading: CircleAvatar(child: Text('#${o.id}')),
-                        title: Text(o.vehiculo?.descripcion ?? 'Vehículo ${o.vehiculoId}'),
-                        subtitle: Text(o.tipoServicio ?? '-'),
-                        trailing: EstadoChip(o.estado),
-                        onTap: () async {
-                          await Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => OrdenDetailScreen(ordenId: o.id),
-                          ));
-                          _cargar();
-                        },
-                      ),
-                    );
+      body: FutureBuilder<List<OrdenMantenimiento>>(
+        future: _futuro,
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) return Center(child: Text('${snap.error}'));
+          final ordenes = snap.data ?? [];
+          if (ordenes.isEmpty) {
+            return Center(
+                child: Text(_esPresupuesto
+                    ? 'No hay órdenes en fase de presupuesto.'
+                    : 'No hay órdenes en fase de ejecución.'));
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: ordenes.length,
+            itemBuilder: (context, i) {
+              final o = ordenes[i];
+              return Card(
+                child: ListTile(
+                  leading: CircleAvatar(child: Text('#${o.id}')),
+                  title: Text(o.vehiculo?.descripcion ?? 'Vehículo ${o.vehiculoId}'),
+                  subtitle: Text(o.tipoServicio ?? '-'),
+                  trailing: EstadoChip(o.estado),
+                  onTap: () async {
+                    await Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => OrdenDetailScreen(ordenId: o.id, fase: widget.fase),
+                    ));
+                    _cargar();
                   },
-                );
-              },
-            ),
-          ),
-        ],
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
