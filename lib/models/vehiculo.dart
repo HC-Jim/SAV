@@ -67,4 +67,13 @@ class Vehiculo {
 
   String get descripcion =>
       '$placa · ${marca ?? ''} ${modelo ?? ''}'.trim();
+
+  /// Factor de garantía = tarifa diaria × este valor (coincide con el backend).
+  static const int factorGarantia = 5;
+
+  /// Precio por día aplicable según los días (normal o campaña).
+  double precioPara(int dias) {
+    if (precioCampania > 0 && dias >= diasMinCampania) return precioCampania;
+    return precioNormal;
+  }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/reserva.dart';
 import '../../services/alquiler_service.dart';
-import '../../services/api_client.dart';
+import 'pagar_reserva_screen.dart';
 
 /// Lista de reservas del Cliente con las acciones disponibles por estado.
 class MisReservasScreen extends StatefulWidget {
@@ -13,7 +13,6 @@ class MisReservasScreen extends StatefulWidget {
 class _MisReservasScreenState extends State<MisReservasScreen> {
   final _svc = AlquilerService();
   late Future<List<Reserva>> _futuro;
-  bool _procesando = false;
 
   @override
   void initState() {
@@ -23,40 +22,11 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
 
   void _cargar() => setState(() => _futuro = _svc.misReservas());
 
-  Future<void> _ejecutar(Future<void> Function() accion) async {
-    setState(() => _procesando = true);
-    try {
-      await accion();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Operación realizada')));
-      _cargar();
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(e.mensaje), backgroundColor: Colors.black));
-    } finally {
-      if (mounted) setState(() => _procesando = false);
-    }
-  }
-
-  Future<void> _confirmarPago(Reserva r) async {
-    final total = r.montoTotalEstimado + r.garantiaMonto;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Pagar orden de reserva'),
-        content: Text(
-            'Se registrará el pago del alquiler (S/ ${r.montoTotalEstimado.toStringAsFixed(2)}) '
-            'y la garantía (S/ ${r.garantiaMonto.toStringAsFixed(2)}).\n\n'
-            'Total a pagar: S/ ${total.toStringAsFixed(2)}\n\n¿Confirmas el pago?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Volver')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Pagar')),
-        ],
-      ),
+  Future<void> _abrirPago(Reserva r) async {
+    final pagado = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => PagarReservaScreen(reserva: r)),
     );
-    if (ok == true) _ejecutar(() => _svc.pagarOrdenReserva(r.id));
+    if (pagado == true) _cargar();
   }
 
   @override
@@ -68,7 +38,6 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
       ),
       body: Column(
         children: [
-          if (_procesando) const LinearProgressIndicator(),
           Expanded(
             child: FutureBuilder<List<Reserva>>(
               future: _futuro,
@@ -126,7 +95,7 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
     final acciones = <Widget>[];
     if (r.estado == EstadoReserva.porPagar) {
       acciones.add(FilledButton.icon(
-        onPressed: _procesando ? null : () => _confirmarPago(r),
+        onPressed: () => _abrirPago(r),
         icon: const Icon(Icons.payments_outlined),
         label: const Text('Pagar orden de reserva'),
       ));

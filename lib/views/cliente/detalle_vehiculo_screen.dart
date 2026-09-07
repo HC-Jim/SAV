@@ -125,6 +125,7 @@ class _DetalleVehiculoScreenState extends State<DetalleVehiculoScreen> {
                     color: Colors.black,
                     fontWeight: _disponible ? FontWeight.bold : FontWeight.normal)),
           ],
+          if (_inicio != null && _fin != null) _resumenEstimado(),
           const SizedBox(height: 16),
           if (context.watch<AuthController>().usuario?.esCliente ?? false) ...[
             FilledButton.icon(
@@ -164,6 +165,60 @@ class _DetalleVehiculoScreenState extends State<DetalleVehiculoScreen> {
     } finally {
       if (mounted) setState(() => _procesando = false);
     }
+  }
+
+  /// Resumen del costo estimado (alquiler + garantía) según las fechas.
+  Widget _resumenEstimado() {
+    final v = widget.vehiculo;
+    final dias = _fin!.difference(_inicio!).inDays <= 0
+        ? 1
+        : _fin!.difference(_inicio!).inDays;
+    final tarifa = v.precioPara(dias);
+    final alquiler = tarifa * dias;
+    final garantia = tarifa * Vehiculo.factorGarantia;
+    final total = alquiler + garantia;
+    Widget fila(String k, String val, {bool bold = false}) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 3),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(k,
+                  style: TextStyle(
+                      color: Colors.black87,
+                      fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
+              Text(val,
+                  style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
+            ],
+          ),
+        );
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Card(
+        color: const Color(0xFFF3F6FA),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Resumen estimado',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              const SizedBox(height: 8),
+              fila('Días', '$dias'),
+              fila('Precio por día', 'S/ ${tarifa.toStringAsFixed(2)}'),
+              fila('Alquiler', 'S/ ${alquiler.toStringAsFixed(2)}'),
+              fila('Garantía (depósito)', 'S/ ${garantia.toStringAsFixed(2)}'),
+              const Divider(),
+              fila('Total a pagar', 'S/ ${total.toStringAsFixed(2)}', bold: true),
+              const SizedBox(height: 4),
+              const Text(
+                'La garantía es un depósito reembolsable al devolver el vehículo.',
+                style: TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _fila(String k, String val) => Padding(
