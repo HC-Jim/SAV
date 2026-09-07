@@ -28,7 +28,7 @@ class AlquilerService {
     return data.map((e) => Reserva.fromJson(e)).toList();
   }
 
-  /// Todas las reservas (gestión interna: Jefe, Cajero, Asesor).
+  /// Todas las reservas (gestión interna: Jefe, Cajero).
   Future<List<Reserva>> listarTodas() async {
     final data = await _api.get('$_base/reservas/todas') as List;
     return data.map((e) => Reserva.fromJson(e)).toList();
@@ -39,33 +39,35 @@ class AlquilerService {
     return Reserva.fromJson(data);
   }
 
-  Future<void> pagarAlquiler(int reservaId, {String metodo = 'TARJETA'}) =>
-      _api.patch('$_base/reservas/$reservaId/pagar-alquiler', {'metodo': metodo});
+  /// 1. Generar Orden de Reserva (Cliente) → estado POR_PAGAR.
+  Future<void> generarOrdenReserva({
+    required int vehiculoId,
+    required String fechaInicio,
+    required String fechaFin,
+  }) =>
+      _api.post('$_base/reservas', {
+        'vehiculo_id': vehiculoId,
+        'fecha_inicio': fechaInicio,
+        'fecha_fin': fechaFin,
+      });
 
-  Future<void> cancelar(int reservaId, {String? motivo}) =>
-      _api.patch('$_base/reservas/$reservaId/cancelar', {'motivo': motivo});
+  /// 2. Pagar Orden de Reserva (Cliente): garantía + alquiler → RESERVADO.
+  Future<void> pagarOrdenReserva(int reservaId, {String metodo = 'TARJETA'}) =>
+      _api.patch('$_base/reservas/$reservaId/pagar', {'metodo': metodo});
 
   // ---------- Acciones del Cajero ----------
-
-  /// Aprobar la orden de reserva (Cajero): PENDIENTE_APROBACION → CONFIRMADA + comprobante.
-  Future<void> aprobarReserva(int reservaId) =>
-      _api.patch('$_base/reservas/$reservaId/aprobar');
 
   /// Cobrar días extra (retraso): días × precio por día + comprobante.
   Future<void> cobrarDiasExtra(int reservaId, int dias) =>
       _api.patch('$_base/reservas/$reservaId/cobrar-extra', {'dias': dias});
 
-  /// Devolver Garantía (Cajero): EN_CURSO → FINALIZADA, con deducciones opcionales.
+  /// Devolver Garantía (Cajero): RESERVADO → FINALIZADA, con deducciones opcionales.
   Future<void> devolverGarantia(int reservaId,
           {double deducciones = 0, String metodo = 'TARJETA'}) =>
       _api.patch('$_base/reservas/$reservaId/devolver-garantia',
           {'deducciones': deducciones, 'metodo': metodo});
 
-  /// Gestionar Cancelación (Cajero): aplica regla 48h y emite comprobante.
-  Future<void> gestionarCancelacion(int reservaId, {String? motivo}) =>
-      _api.patch('$_base/reservas/$reservaId/gestionar-cancelacion', {'motivo': motivo});
-
-  /// Emitir Comprobante (Cajero) del pago de alquiler.
+  /// Emitir Comprobante (Cajero) del pago de la orden de reserva.
   Future<Map<String, dynamic>> emitirComprobante(int reservaId) async =>
       await _api.post('$_base/reservas/$reservaId/emitir-comprobante')
           as Map<String, dynamic>;

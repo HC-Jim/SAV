@@ -3,16 +3,12 @@ import 'package:provider/provider.dart';
 import '../models/usuario.dart';
 import '../state/auth_controller.dart';
 import '../theme.dart';
-import 'asesor/cotizaciones_screen.dart';
 import 'cliente/detalle_vehiculo_screen.dart';
-import 'cliente/mis_cotizaciones_screen.dart';
 import 'cliente/mis_reservas_screen.dart';
 import 'crear_orden_screen.dart';
 import 'estado_vehiculo_screen.dart';
 import 'ordenes_list_screen.dart';
-import 'gestion/clientes_admin_screen.dart';
 import 'gestion/editar_vehiculo_screen.dart';
-import 'gestion/garantias_screen.dart';
 import 'gestion/precios_screen.dart';
 import 'gestion/reservas_internas_screen.dart';
 import 'gestion/seguros_screen.dart';
@@ -127,32 +123,24 @@ class MenuScreen extends StatelessWidget {
                     builder: (_) => EstadoVehiculoScreen(vehiculo: v)));
               },
             ));
-    final catalogo = _OpcionMenu(
-        'Catálogo de vehículos',
-        'Consultar vehículos y disponibilidad',
-        Icons.directions_car_outlined,
-        () => ListaVehiculosScreen(
-              titulo: 'Catálogo de vehículos',
-              onSeleccionar: (ctx, v) async {
-                await Navigator.of(ctx).push(MaterialPageRoute(
-                    builder: (_) => DetalleVehiculoScreen(vehiculo: v)));
-              },
-            ));
-    final clientes = _OpcionMenu('Gestión de clientes', 'Registrar y editar clientes',
-        Icons.people_outline, () => const ClientesAdminScreen());
-    final cotizaciones = _OpcionMenu('Cotizaciones', 'Generar y gestionar cotizaciones',
-        Icons.request_quote_outlined, () => const CotizacionesScreen());
     final reservasInternas = _OpcionMenu('Reservas',
-        usuario.esCajero ? 'Pagos, devoluciones y cancelaciones' : 'Ver todas las reservas',
+        usuario.esCajero ? 'Devoluciones, comprobantes y días extra' : 'Ver todas las reservas',
         Icons.event_note_outlined, () => const ReservasInternasScreen());
 
     if (usuario.esCliente) {
       return [
-        catalogo,
+        // Generar Orden de Reserva: buscar vehículo → generar la orden.
+        _OpcionMenu('Reservar vehículo', 'Buscar vehículo y generar la orden de reserva',
+            Icons.event_available_outlined, () => ListaVehiculosScreen(
+                  titulo: 'Reservar vehículo',
+                  onSeleccionar: (ctx, v) async {
+                    await Navigator.of(ctx).push(MaterialPageRoute(
+                        builder: (_) => DetalleVehiculoScreen(vehiculo: v)));
+                  },
+                )),
         precios,
-        _OpcionMenu('Mis cotizaciones', 'Aceptar/rechazar y pagar garantía',
-            Icons.request_quote_outlined, () => const MisCotizacionesScreen()),
-        _OpcionMenu('Mis reservas', 'Pagar alquiler y cancelar',
+        // Pagar Orden de Reserva: pagar garantía + alquiler.
+        _OpcionMenu('Mis reservas', 'Pagar la orden de reserva (garantía + alquiler)',
             Icons.receipt_long_outlined, () => const MisReservasScreen()),
       ];
     }
@@ -181,14 +169,9 @@ class MenuScreen extends StatelessWidget {
             Icons.shield_outlined, () => const SegurosScreen()),
       ];
     }
-    if (usuario.esAsesor) {
-      return [catalogo, precios, clientes, cotizaciones, reservasInternas];
-    }
     if (usuario.esCajero) {
       return [
-        _OpcionMenu('Garantías', 'Aprobar garantías y emitir comprobante',
-            Icons.verified_user_outlined, () => const GarantiasScreen()),
-        _OpcionMenu('Órdenes de reserva', 'Aprobar reservas, pagos, comprobantes y días extra',
+        _OpcionMenu('Órdenes de reserva', 'Devolver garantía, emitir comprobante y días extra',
             Icons.event_note_outlined, () => const ReservasInternasScreen()),
         precios,
       ];

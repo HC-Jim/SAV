@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../models/vehiculo.dart';
 import '../../services/api_client.dart';
 import '../../services/alquiler_service.dart';
-import '../../services/ventas_service.dart';
 import '../../state/auth_controller.dart';
 
 /// Detalle del vehículo + selección de fechas, disponibilidad y reserva.
@@ -17,7 +16,6 @@ class DetalleVehiculoScreen extends StatefulWidget {
 
 class _DetalleVehiculoScreenState extends State<DetalleVehiculoScreen> {
   final _svc = AlquilerService();
-  final _ventas = VentasService();
   DateTime? _inicio;
   DateTime? _fin;
   String? _mensajeDisp;
@@ -130,40 +128,36 @@ class _DetalleVehiculoScreenState extends State<DetalleVehiculoScreen> {
           const SizedBox(height: 16),
           if (context.watch<AuthController>().usuario?.esCliente ?? false) ...[
             FilledButton.icon(
-              onPressed: (_procesando || !_disponible) ? null : _solicitarCotizacion,
-              icon: const Icon(Icons.request_quote_outlined),
-              label: const Text('Solicitar cotización'),
+              onPressed: (_procesando || !_disponible) ? null : _generarOrdenReserva,
+              icon: const Icon(Icons.event_available_outlined),
+              label: const Text('Generar orden de reserva'),
             ),
             const SizedBox(height: 8),
             const Text(
-              'Verifica la disponibilidad y solicita tu cotización. Luego, en '
-              '"Mis cotizaciones", acéptala y paga la garantía.',
+              'Verifica la disponibilidad y genera tu orden de reserva. Luego, en '
+              '"Mis reservas", paga la garantía y el alquiler para confirmarla.',
               style: TextStyle(color: Colors.black54, fontSize: 13),
             ),
-          ] else
-            const Text(
-              'El Asesor de Ventas puede generar la cotización para un cliente.',
-              style: TextStyle(color: Colors.black54, fontSize: 13),
-            ),
+          ],
         ],
       ),
     );
   }
 
-  Future<void> _solicitarCotizacion() async {
+  Future<void> _generarOrdenReserva() async {
     if (_inicio == null || _fin == null) {
       _snack('Selecciona fecha de inicio y fin');
       return;
     }
     setState(() => _procesando = true);
     try {
-      await _ventas.generarPropia(
+      await _svc.generarOrdenReserva(
         vehiculoId: widget.vehiculo.id,
         fechaInicio: _fmt(_inicio!),
         fechaFin: _fmt(_fin!),
       );
       if (!mounted) return;
-      _snack('Cotización creada. Revísala en "Mis cotizaciones".');
+      _snack('Orden de reserva generada. Págala en "Mis reservas".');
       Navigator.of(context).pop();
     } on ApiException catch (e) {
       _snack(e.mensaje);

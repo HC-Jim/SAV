@@ -44,24 +44,6 @@ class _ReservasInternasScreenState extends State<ReservasInternasScreen> {
     }
   }
 
-  /// Gestionar Cancelación (Cajero): aplica la regla de 48 h y emite comprobante.
-  Future<void> _gestionarCancelacion(Reserva r) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Gestionar cancelación'),
-        content: const Text(
-            'Se aplicará penalidad si faltan menos de 48 h para el inicio, '
-            'se devolverá la garantía restante y se emitirá el comprobante. ¿Confirmar?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Volver')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirmar')),
-        ],
-      ),
-    );
-    if (ok == true) _ejecutar(() => _svc.gestionarCancelacion(r.id));
-  }
-
   /// Devolver Garantía (Cajero): permite registrar deducciones por daños.
   Future<void> _devolverGarantia(Reserva r) async {
     final ded = TextEditingController(text: '0');
@@ -227,25 +209,10 @@ class _ReservasInternasScreenState extends State<ReservasInternasScreen> {
     final acciones = <Widget>[];
     final off = _procesando;
 
-    if (r.estado == EstadoReserva.pendienteAprobacion) {
-      acciones.add(FilledButton(
-        onPressed: off ? null : () => _ejecutar(() => _svc.aprobarReserva(r.id)),
-        child: const Text('Aprobar reserva'),
-      ));
-      acciones.add(OutlinedButton(
-        onPressed: off ? null : () => _gestionarCancelacion(r),
-        child: const Text('Cancelar'),
-      ));
-    } else if (r.estado == EstadoReserva.confirmada) {
-      acciones.add(FilledButton(
-        onPressed: off ? null : () => _ejecutar(() => _svc.pagarAlquiler(r.id)),
-        child: const Text('Registrar pago de alquiler'),
-      ));
-      acciones.add(OutlinedButton(
-        onPressed: off ? null : () => _gestionarCancelacion(r),
-        child: const Text('Gestionar cancelación'),
-      ));
-    } else if (r.estado == EstadoReserva.enCurso) {
+    if (r.estado == EstadoReserva.porPagar) {
+      // El pago lo realiza el Cliente desde "Mis reservas".
+      acciones.add(const Chip(label: Text('Pendiente de pago del cliente')));
+    } else if (r.estado == EstadoReserva.reservado) {
       acciones.add(FilledButton(
         onPressed: off ? null : () => _devolverGarantia(r),
         child: const Text('Devolver garantía'),
@@ -258,18 +225,12 @@ class _ReservasInternasScreenState extends State<ReservasInternasScreen> {
         onPressed: off ? null : () => _cobrarDiasExtra(r),
         child: const Text('Cobrar días extra'),
       ));
-      acciones.add(OutlinedButton(
-        onPressed: off ? null : () => _gestionarCancelacion(r),
-        child: const Text('Gestionar cancelación'),
-      ));
     } else {
-      // FINALIZADA / CANCELADA: solo consulta/emisión de comprobantes.
-      if (r.estado == EstadoReserva.finalizada) {
-        acciones.add(OutlinedButton(
-          onPressed: off ? null : () => _emitirComprobante(r),
-          child: const Text('Emitir comprobante'),
-        ));
-      }
+      // FINALIZADA: solo consulta/emisión de comprobantes.
+      acciones.add(OutlinedButton(
+        onPressed: off ? null : () => _emitirComprobante(r),
+        child: const Text('Emitir comprobante'),
+      ));
       acciones.add(TextButton(
         onPressed: off ? null : () => VisorComprobantes.abrir(context, reservaId: r.id),
         child: const Text('Ver comprobantes'),

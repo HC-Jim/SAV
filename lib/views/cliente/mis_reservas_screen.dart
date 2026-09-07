@@ -40,21 +40,23 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
     }
   }
 
-  Future<void> _confirmarCancelar(Reserva r) async {
+  Future<void> _confirmarPago(Reserva r) async {
+    final total = r.montoTotalEstimado + r.garantiaMonto;
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Cancelar reserva'),
-        content: const Text(
-            'Se aplicará penalidad si faltan menos de 48 h para el inicio.\n'
-            '¿Confirmas la cancelación?'),
+        title: const Text('Pagar orden de reserva'),
+        content: Text(
+            'Se registrará el pago del alquiler (S/ ${r.montoTotalEstimado.toStringAsFixed(2)}) '
+            'y la garantía (S/ ${r.garantiaMonto.toStringAsFixed(2)}).\n\n'
+            'Total a pagar: S/ ${total.toStringAsFixed(2)}\n\n¿Confirmas el pago?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Volver')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Confirmar')),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Pagar')),
         ],
       ),
     );
-    if (ok == true) _ejecutar(() => _svc.cancelar(r.id));
+    if (ok == true) _ejecutar(() => _svc.pagarOrdenReserva(r.id));
   }
 
   @override
@@ -122,14 +124,11 @@ class _MisReservasScreenState extends State<MisReservasScreen> {
   List<Widget> _acciones(Reserva r) {
     if (r.esFinal) return [];
     final acciones = <Widget>[];
-    if (r.estado == EstadoReserva.confirmada) {
-      acciones.add(FilledButton(
-        onPressed: _procesando ? null : () => _ejecutar(() => _svc.pagarAlquiler(r.id)),
-        child: const Text('Pagar alquiler y finalizar'),
-      ));
-      acciones.add(OutlinedButton(
-        onPressed: _procesando ? null : () => _confirmarCancelar(r),
-        child: const Text('Cancelar'),
+    if (r.estado == EstadoReserva.porPagar) {
+      acciones.add(FilledButton.icon(
+        onPressed: _procesando ? null : () => _confirmarPago(r),
+        icon: const Icon(Icons.payments_outlined),
+        label: const Text('Pagar orden de reserva'),
       ));
     }
     return acciones;

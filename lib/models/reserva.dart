@@ -1,28 +1,19 @@
 import 'vehiculo.dart';
 
-/// Estados de la reserva (coinciden con el backend).
+/// Estados de la orden de reserva (coinciden con el backend).
 class EstadoReserva {
-  static const pendienteAprobacion = 'PENDIENTE_APROBACION';
-  static const pendientePago = 'PENDIENTE_PAGO_GARANTIA';
-  static const confirmada = 'CONFIRMADA';
-  static const enCurso = 'EN_CURSO';
+  static const porPagar = 'POR_PAGAR';
+  static const reservado = 'RESERVADO';
   static const finalizada = 'FINALIZADA';
-  static const cancelada = 'CANCELADA';
 
   static String legible(String e) {
     switch (e) {
-      case pendienteAprobacion:
-        return 'Pendiente de aprobación (Cajero)';
-      case pendientePago:
-        return 'Pendiente de pago de garantía';
-      case confirmada:
-        return 'Confirmada';
-      case enCurso:
-        return 'En curso';
+      case porPagar:
+        return 'Por pagar';
+      case reservado:
+        return 'Reservado';
       case finalizada:
         return 'Finalizada';
-      case cancelada:
-        return 'Cancelada';
       default:
         return e;
     }
@@ -55,6 +46,5 @@ class Reserva {
         motivoCancelacion = j['motivo_cancelacion'],
         vehiculo = j['vehiculo'] != null ? Vehiculo.fromJson(j['vehiculo']) : null;
 
-  bool get esFinal =>
-      estado == EstadoReserva.finalizada || estado == EstadoReserva.cancelada;
+  bool get esFinal => estado == EstadoReserva.finalizada;
 }
