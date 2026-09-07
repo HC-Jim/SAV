@@ -8,7 +8,9 @@ import 'cliente/mis_reservas_screen.dart';
 import 'crear_orden_screen.dart';
 import 'estado_vehiculo_screen.dart';
 import 'ordenes_list_screen.dart';
+import 'gestion/devolver_garantia_screen.dart';
 import 'gestion/editar_vehiculo_screen.dart';
+import 'gestion/emitir_comprobante_screen.dart';
 import 'gestion/precios_screen.dart';
 import 'gestion/reservas_internas_screen.dart';
 import 'gestion/seguros_screen.dart';
@@ -170,21 +172,28 @@ class MenuScreen extends StatelessWidget {
       ];
     }
     if (usuario.esCajero) {
+      // Dos interfaces independientes, cada una «include» Buscar Orden de Reserva.
       return [
-        _OpcionMenu('Órdenes de reserva', 'Devolver garantía, emitir comprobante y días extra',
-            Icons.event_note_outlined, () => const ReservasInternasScreen()),
+        _OpcionMenu('Devolver garantía', 'Buscar la reserva y devolver la garantía',
+            Icons.assignment_return_outlined, () => const DevolverGarantiaScreen()),
+        _OpcionMenu('Emitir comprobante', 'Buscar la reserva y emitir el comprobante',
+            Icons.receipt_long_outlined, () => const EmitirComprobanteScreen()),
         precios,
       ];
     }
-    // Jefe de Logística: mantenimiento (2 fases) + consulta de reservas.
-    return [
-      ordenesMantenimiento,
-      vehiculosEstado,
-      _OpcionMenu('Crear orden de mantenimiento', 'Buscar vehículo e iniciar una OM',
-          Icons.add_box_outlined, () => const CrearOrdenScreen()),
-      repuestos,
-      reservasInternas,
-    ];
+    if (usuario.esJefe) {
+      // Jefe de Logística: mantenimiento (2 fases) + consulta de reservas.
+      return [
+        ordenesMantenimiento,
+        vehiculosEstado,
+        _OpcionMenu('Crear orden de mantenimiento', 'Buscar vehículo e iniciar una OM',
+            Icons.add_box_outlined, () => const CrearOrdenScreen()),
+        repuestos,
+        reservasInternas,
+      ];
+    }
+    // Rol sin acceso (p. ej. Asesor de Ventas, eliminado del sistema).
+    return [];
   }
 }
 

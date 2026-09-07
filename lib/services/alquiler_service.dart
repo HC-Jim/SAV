@@ -57,10 +57,6 @@ class AlquilerService {
 
   // ---------- Acciones del Cajero ----------
 
-  /// Cobrar días extra (retraso): días × precio por día + comprobante.
-  Future<void> cobrarDiasExtra(int reservaId, int dias) =>
-      _api.patch('$_base/reservas/$reservaId/cobrar-extra', {'dias': dias});
-
   /// Devolver Garantía (Cajero): RESERVADO → FINALIZADA, con deducciones opcionales.
   Future<void> devolverGarantia(int reservaId,
           {double deducciones = 0, String metodo = 'TARJETA'}) =>
