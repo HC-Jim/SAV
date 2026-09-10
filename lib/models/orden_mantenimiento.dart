@@ -91,15 +91,11 @@ class Presupuesto {
   final double costoRepuestos;
   final double costoManoObra;
   final double total;
-  final String estado; // PENDIENTE | AUTORIZADO | RECHAZADO
-  final String? motivoRechazo;
   Presupuesto.fromJson(Map<String, dynamic> j)
       : id = j['id'],
         costoRepuestos = (j['costo_repuestos'] as num?)?.toDouble() ?? 0,
         costoManoObra = (j['costo_mano_obra'] as num?)?.toDouble() ?? 0,
-        total = (j['total'] as num?)?.toDouble() ?? 0,
-        estado = j['estado'] ?? 'PENDIENTE',
-        motivoRechazo = j['motivo_rechazo'];
+        total = (j['total'] as num?)?.toDouble() ?? 0;
 }
 
 class InformeTecnico {
@@ -179,14 +175,8 @@ class OrdenMantenimiento {
   String get tipoNombre =>
       (tipoMantenimiento?['nombre'] as String?) ?? tipoServicio ?? '-';
 
-  /// Presupuesto pendiente de decisión (si existe).
-  Presupuesto? get presupuestoPendiente =>
-      presupuestos.where((p) => p.estado == 'PENDIENTE').isNotEmpty
-          ? presupuestos.firstWhere((p) => p.estado == 'PENDIENTE')
-          : (presupuestos.isNotEmpty ? presupuestos.last : null);
-
-  /// El Mecánico registra requerimiento y mano de obra; el Jefe aprueba el
-  /// presupuesto final (ya no hay aprobación por partes).
+  /// El Mecánico registra requerimiento y mano de obra; al generar el
+  /// presupuesto la orden pasa directo a ejecución (el Jefe ya no autoriza).
   bool get tieneRequerimiento => requerimientos.isNotEmpty;
 
   bool get tieneManoObra => manosObra.isNotEmpty;

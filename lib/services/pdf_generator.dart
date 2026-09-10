@@ -50,8 +50,6 @@ Future<void> generarPresupuestoPdf(OrdenMantenimiento o) async {
           _total('Mano de obra', p?.costoManoObra ?? 0),
           pw.Divider(),
           _total('TOTAL', p?.total ?? 0, negrita: true),
-          pw.SizedBox(height: 12),
-          _campo('Estado', p?.estado ?? '-'),
           pw.Spacer(),
           _pie(),
         ],

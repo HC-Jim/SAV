@@ -203,9 +203,6 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
               _fila('Repuestos', 'S/ ${p.costoRepuestos.toStringAsFixed(2)}'),
               _fila('Mano de obra', 'S/ ${p.costoManoObra.toStringAsFixed(2)}'),
               _fila('Total', 'S/ ${p.total.toStringAsFixed(2)}'),
-              _fila('Estado', p.estado),
-              if (p.motivoRechazo != null && p.motivoRechazo!.isNotEmpty)
-                _fila('Motivo rechazo', p.motivoRechazo!),
               const Divider(),
             ],
           );
