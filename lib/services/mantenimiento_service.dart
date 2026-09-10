@@ -70,10 +70,6 @@ class MantenimientoService {
       _api.post('$_base/ordenes/$ordenId/mano-obra',
           {'costo': costo, 'observacion': observacion});
 
-  Future<void> decidirPresupuesto(int presupuestoId, bool autorizado, {String? motivo}) =>
-      _api.patch('$_base/presupuestos/$presupuestoId/decidir',
-          {'autorizado': autorizado, 'motivo': motivo});
-
   Future<void> decidirConformidad(int ordenId, bool conforme, {String? motivo}) =>
       _api.patch('$_base/ordenes/$ordenId/conformidad',
           {'conforme': conforme, 'motivo': motivo});

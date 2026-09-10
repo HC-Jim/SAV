@@ -347,19 +347,8 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
       }
     }
 
-    if (u.esJefe && esPres) {
-      // El Jefe solo aprueba/rechaza el presupuesto final.
-      if (e == EstadoOrden.pendienteAutorizacion && o.presupuestoPendiente != null) {
-        final p = o.presupuestoPendiente!;
-        acciones.add(_btn('Autorizar presupuesto', Icons.check_circle, () {
-          _ejecutar(() => _svc.decidirPresupuesto(p.id, true));
-        }));
-        acciones.add(_btn('Rechazar presupuesto', Icons.cancel, () async {
-          final motivo = await mostrarMotivoDialog(context, 'Rechazar presupuesto');
-          if (motivo != null) _ejecutar(() => _svc.decidirPresupuesto(p.id, false, motivo: motivo));
-        }, peligro: true));
-      }
-    }
+    // El Jefe ya no autoriza el presupuesto; solo da conformidad tras la
+    // ejecución (ver más abajo).
 
     if (u.esJefe && esInf) {
       if (e == EstadoOrden.pendienteConformidad) {
