@@ -121,7 +121,7 @@ class OrdenMantenimiento {
   final int? tipoMantenimientoId;
   final String? tipoServicio;
   final Map<String, dynamic>? tipoMantenimiento;
-  final String? descripcion;
+  final String? indicaciones;
   final String estado;
   final String? horaInicioMant;
   final String? horaFinMant;
@@ -144,7 +144,7 @@ class OrdenMantenimiento {
         tipoMantenimientoId = j['tipo_mantenimiento_id'],
         tipoServicio = j['tipo_servicio'],
         tipoMantenimiento = j['tipo_mantenimiento'] as Map<String, dynamic>?,
-        descripcion = j['descripcion'],
+        indicaciones = j['indicaciones'],
         estado = j['estado'],
         horaInicioMant = j['hora_inicio_mant'],
         horaFinMant = j['hora_fin_mant'],

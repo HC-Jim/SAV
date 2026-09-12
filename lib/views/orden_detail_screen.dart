@@ -119,8 +119,8 @@ class _OrdenDetailScreenState extends State<OrdenDetailScreen> {
               ),
               const SizedBox(height: 8),
               _fila('Tipo de mantenimiento', o.tipoNombre),
-              if (o.descripcion != null && o.descripcion!.isNotEmpty)
-                _fila('Descripción', o.descripcion!),
+              if (o.indicaciones != null && o.indicaciones!.isNotEmpty)
+                _fila('Indicaciones', o.indicaciones!),
               _fila('Creada', _fecha(o.fechaCreacion)),
               if (o.duracionMinutos != null)
                 _fila('Duración mano de obra', '${o.duracionMinutos} min'),

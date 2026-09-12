@@ -50,18 +50,19 @@ class MantenimientoService {
   }
 
   // ---------- Jefe de Logistica ----------
-  Future<void> crearOrden({
+  Future<OrdenMantenimiento> crearOrden({
     required int vehiculoId,
-    int? mecanicoId,
+    required int mecanicoId,
     required int tipoMantenimientoId,
-    String? descripcion,
+    String? indicaciones,
   }) async {
-    await _api.post('$_base/ordenes', {
+    final data = await _api.post('$_base/ordenes', {
       'vehiculo_id': vehiculoId,
       'mecanico_id': mecanicoId,
       'tipo_mantenimiento_id': tipoMantenimientoId,
-      'descripcion': descripcion,
+      'indicaciones': indicaciones,
     });
+    return OrdenMantenimiento.fromJson(data as Map<String, dynamic>);
   }
 
   // ---------- Mano de obra ----------

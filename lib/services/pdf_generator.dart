@@ -2,6 +2,60 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../models/orden_mantenimiento.dart';
+import '../models/vehiculo.dart';
+
+/// Genera y abre el PDF de la **Orden de Mantenimiento** recién creada.
+Future<void> generarOrdenPdf({
+  required int id,
+  required Vehiculo vehiculo,
+  required String mecanico,
+  required String tipo,
+  String? tipoDetalle,
+  String? indicaciones,
+}) async {
+  final doc = pw.Document();
+  final ahora = DateTime.now();
+  String dos(int n) => n.toString().padLeft(2, '0');
+  final fecha =
+      '${dos(ahora.day)}/${dos(ahora.month)}/${ahora.year} ${dos(ahora.hour)}:${dos(ahora.minute)}';
+
+  doc.addPage(
+    pw.Page(
+      pageFormat: PdfPageFormat.a4,
+      build: (ctx) => pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          _encabezado('ORDEN DE MANTENIMIENTO'),
+          pw.SizedBox(height: 12),
+          _campo('N° de orden', '#$id'),
+          _campo('Fecha de emisión', fecha),
+          _campo('Estado', 'Pendiente de inspección'),
+          pw.SizedBox(height: 16),
+          pw.Text('Vehículo', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 6),
+          _campo('Descripción', vehiculo.descripcion),
+          if (vehiculo.categoria != null) _campo('Categoría', vehiculo.categoria!),
+          if (vehiculo.anio != null) _campo('Año', '${vehiculo.anio}'),
+          if (vehiculo.color != null) _campo('Color', vehiculo.color!),
+          if (vehiculo.kilometraje != null)
+            _campo('Kilometraje', '${vehiculo.kilometraje} km'),
+          pw.SizedBox(height: 16),
+          pw.Text('Asignación', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 6),
+          _campo('Mecánico', mecanico),
+          _campo('Tipo de mantenimiento', tipoDetalle == null ? tipo : '$tipo ($tipoDetalle)'),
+          pw.SizedBox(height: 16),
+          pw.Text('Indicaciones', style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+          pw.SizedBox(height: 6),
+          pw.Text((indicaciones == null || indicaciones.isEmpty) ? 'Sin indicaciones.' : indicaciones),
+          pw.Spacer(),
+          _pie(),
+        ],
+      ),
+    ),
+  );
+  await Printing.layoutPdf(onLayout: (_) async => doc.save());
+}
 
 /// Genera y abre (vista previa / guardar) el documento PDF del **Presupuesto**.
 Future<void> generarPresupuestoPdf(OrdenMantenimiento o) async {
@@ -75,7 +129,7 @@ Future<void> generarInformePdf(OrdenMantenimiento o) async {
         _campo('Orden', '#${o.id}'),
         _campo('Vehículo', o.vehiculo?.descripcion ?? 'Vehículo ${o.vehiculoId}'),
         _campo('Tipo de servicio', o.tipoServicio ?? '-'),
-        _campo('Descripción de la actividad', o.descripcion ?? '-'),
+        _campo('Indicaciones', o.indicaciones ?? '-'),
         pw.SizedBox(height: 16),
 
         pw.Text('Ejecución del mantenimiento',
