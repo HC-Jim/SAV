@@ -15,7 +15,6 @@ class SegurosScreen extends StatefulWidget {
 class _SegurosScreenState extends State<SegurosScreen> {
   final _svc = GestionService();
   late Future<List<Seguro>> _futuro;
-  bool _soloPorVencer = false;
 
   @override
   void initState() {
@@ -23,8 +22,7 @@ class _SegurosScreenState extends State<SegurosScreen> {
     _cargar();
   }
 
-  void _cargar() => setState(() => _futuro =
-      _soloPorVencer ? _svc.segurosPorVencer(dias: 30) : _svc.listarSeguros());
+  void _cargar() => setState(() => _futuro = _svc.listarSeguros());
 
   void _snack(String m) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
@@ -32,21 +30,7 @@ class _SegurosScreenState extends State<SegurosScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Seguros y pólizas'),
-        actions: [
-          Row(children: [
-            const Text('Por vencer'),
-            Switch(
-              value: _soloPorVencer,
-              onChanged: (v) {
-                _soloPorVencer = v;
-                _cargar();
-              },
-            ),
-          ]),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Seguros y pólizas')),
       floatingActionButton: FloatingActionButton(
         onPressed: _abrirForm,
         child: const Icon(Icons.add),
@@ -89,52 +73,8 @@ class _SegurosScreenState extends State<SegurosScreen> {
         subtitle: Text('${s.vehiculoDesc}\n${s.aseguradoraEntidad ?? ''}  ·  vence: ${s.fechaVencimiento ?? '-'}\n'
             '$etiqueta'),
         isThreeLine: true,
-        trailing: TextButton.icon(
-          icon: const Icon(Icons.autorenew),
-          label: const Text('Renovar'),
-          onPressed: () => _renovar(s),
-        ),
       ),
     );
-  }
-
-  Future<void> _renovar(Seguro s) async {
-    final poliza = TextEditingController(text: s.numPoliza ?? '');
-    final emision = TextEditingController();
-    final vencimiento = TextEditingController();
-
-    final datos = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Renovar póliza (${s.vehiculoDesc})'),
-        content: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            _campo(poliza, 'N° de póliza (nueva)'),
-            _campo(emision, 'Fecha emisión (YYYY-MM-DD)'),
-            _campo(vencimiento, 'Fecha vencimiento (YYYY-MM-DD)'),
-          ]),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, {
-              'num_poliza': poliza.text.trim(),
-              'fecha_emision': emision.text.trim(),
-              'fecha_vencimiento': vencimiento.text.trim(),
-            }),
-            child: const Text('Renovar'),
-          ),
-        ],
-      ),
-    );
-    if (datos != null) {
-      try {
-        await _svc.renovarSeguro(s.id, datos);
-        if (mounted) _cargar();
-      } on ApiException catch (e) {
-        _snack(e.mensaje);
-      }
-    }
   }
 
   Future<void> _abrirForm() async {

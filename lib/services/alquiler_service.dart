@@ -28,12 +28,6 @@ class AlquilerService {
     return data.map((e) => Reserva.fromJson(e)).toList();
   }
 
-  /// Todas las reservas (gestión interna: Jefe, Cajero).
-  Future<List<Reserva>> listarTodas() async {
-    final data = await _api.get('$_base/reservas/todas') as List;
-    return data.map((e) => Reserva.fromJson(e)).toList();
-  }
-
   Future<Reserva> verReserva(int id) async {
     final data = await _api.get('$_base/reservas/$id');
     return Reserva.fromJson(data);
@@ -51,24 +45,8 @@ class AlquilerService {
         'fecha_fin': fechaFin,
       });
 
-  /// 2. Pagar Orden de Reserva (Cliente): garantía + alquiler → RESERVADO.
+  /// 2. Registrar Pago de Orden de Reserva (Cliente): garantía + alquiler → RESERVADO
+  /// (emite el comprobante como parte del pago).
   Future<void> pagarOrdenReserva(int reservaId, {String metodo = 'TARJETA'}) =>
       _api.patch('$_base/reservas/$reservaId/pagar', {'metodo': metodo});
-
-  // ---------- Acciones del Cajero ----------
-
-  /// Devolver Garantía (Cajero): RESERVADO → FINALIZADA, con deducciones opcionales.
-  Future<void> devolverGarantia(int reservaId,
-          {double deducciones = 0, String metodo = 'TARJETA'}) =>
-      _api.patch('$_base/reservas/$reservaId/devolver-garantia',
-          {'deducciones': deducciones, 'metodo': metodo});
-
-  /// Emitir Comprobante (Cajero) del pago de la orden de reserva.
-  Future<Map<String, dynamic>> emitirComprobante(int reservaId) async =>
-      await _api.post('$_base/reservas/$reservaId/emitir-comprobante')
-          as Map<String, dynamic>;
-
-  /// Comprobantes de una reserva (Cajero).
-  Future<List<dynamic>> comprobantes(int reservaId) async =>
-      await _api.get('$_base/reservas/$reservaId/comprobantes') as List;
 }

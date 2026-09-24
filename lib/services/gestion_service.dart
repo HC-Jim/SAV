@@ -39,12 +39,5 @@ class GestionService {
     return data.map((e) => Seguro.fromJson(e)).toList();
   }
 
-  Future<List<Seguro>> segurosPorVencer({int dias = 30}) async {
-    final data = await _api.get('$_base/seguros/por-vencer?dias=$dias') as List;
-    return data.map((e) => Seguro.fromJson(e)).toList();
-  }
-
   Future<void> crearSeguro(Map<String, dynamic> datos) => _api.post('$_base/seguros', datos);
-  Future<void> renovarSeguro(int id, Map<String, dynamic> datos) =>
-      _api.post('$_base/seguros/$id/renovar', datos);
 }

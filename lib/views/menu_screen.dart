@@ -6,17 +6,11 @@ import '../theme.dart';
 import 'cliente/detalle_vehiculo_screen.dart';
 import 'cliente/mis_reservas_screen.dart';
 import 'crear_orden_screen.dart';
-import 'estado_vehiculo_screen.dart';
-import 'ordenes_list_screen.dart';
-import 'gestion/devolver_garantia_screen.dart';
 import 'gestion/editar_vehiculo_screen.dart';
-import 'gestion/emitir_comprobante_screen.dart';
 import 'gestion/precios_screen.dart';
-import 'gestion/reservas_internas_screen.dart';
 import 'gestion/seguros_screen.dart';
 import 'lista_vehiculos_screen.dart';
 import 'login_screen.dart';
-import 'repuestos_screen.dart';
 
 /// Menú principal. Muestra opciones según el rol del usuario.
 class MenuScreen extends StatelessWidget {
@@ -100,35 +94,8 @@ class MenuScreen extends StatelessWidget {
   }
 
   // Opciones de menú según el rol del usuario (actor).
+  // Alcance vigente: Cliente, Administrador y Jefe de Logística.
   List<_OpcionMenu> _opcionesPorRol(Usuario usuario) {
-    // Reutilizables
-    final repuestos = _OpcionMenu('Catálogo de repuestos', 'Stock y costos del almacén',
-        Icons.inventory_2_outlined, () => const RepuestosScreen());
-    final precios = _OpcionMenu('Catálogo de precios', 'Consultar precios por día del vehículo',
-        Icons.sell_outlined, () => const PreciosScreen());
-    // Órdenes de mantenimiento: buscar una orden y, según su estado, seguir el
-    // flujo de Presupuesto o el de Ejecución (cada uno con su propia interfaz).
-    final ordenesMantenimiento = _OpcionMenu(
-        'Buscar orden de mantenimiento',
-        'Presupuesto o ejecución según el estado de la orden',
-        Icons.build_outlined,
-        () => const OrdenesListScreen());
-    // Vehículos: listar la flota y ver su estado (y sus órdenes).
-    final vehiculosEstado = _OpcionMenu(
-        'Vehículos',
-        'Listar vehículos y ver su estado',
-        Icons.directions_car_outlined,
-        () => ListaVehiculosScreen(
-              titulo: 'Vehículos',
-              onSeleccionar: (ctx, v) async {
-                await Navigator.of(ctx).push(MaterialPageRoute(
-                    builder: (_) => EstadoVehiculoScreen(vehiculo: v)));
-              },
-            ));
-    final reservasInternas = _OpcionMenu('Reservas',
-        usuario.esCajero ? 'Devoluciones, comprobantes y días extra' : 'Ver todas las reservas',
-        Icons.event_note_outlined, () => const ReservasInternasScreen());
-
     if (usuario.esCliente) {
       return [
         // Generar Orden de Reserva: buscar vehículo → generar la orden.
@@ -140,20 +107,17 @@ class MenuScreen extends StatelessWidget {
                         builder: (_) => DetalleVehiculoScreen(vehiculo: v)));
                   },
                 )),
-        precios,
-        // Pagar Orden de Reserva: pagar garantía + alquiler.
+        // Registrar Pago de Orden de Reserva: garantía + alquiler (emite comprobante).
         _OpcionMenu('Mis reservas', 'Pagar la orden de reserva (garantía + alquiler)',
             Icons.receipt_long_outlined, () => const MisReservasScreen()),
       ];
     }
-    if (usuario.esMecanico) {
-      return [ordenesMantenimiento, vehiculosEstado, repuestos];
-    }
     if (usuario.esAdministrador) {
       return [
+        // Registrar Precio de Alquiler: gestión de la flota y su precio por día.
         _OpcionMenu(
             'Gestión de vehículos',
-            'Registrar, editar y eliminar la flota',
+            'Registrar vehículos y su precio de alquiler',
             Icons.garage_outlined,
             () => ListaVehiculosScreen(
                   titulo: 'Vehículos',
@@ -166,33 +130,23 @@ class MenuScreen extends StatelessWidget {
                         builder: (_) => const EditarVehiculoScreen()));
                   },
                 )),
-        precios,
-        _OpcionMenu('Seguros y renovaciones', 'Registrar y renovar pólizas',
+        _OpcionMenu('Catálogo de precios', 'Consultar precios por día del vehículo',
+            Icons.sell_outlined, () => const PreciosScreen()),
+        // Registrar Seguro.
+        _OpcionMenu('Seguros', 'Registrar pólizas de seguro de la flota',
             Icons.shield_outlined, () => const SegurosScreen()),
       ];
     }
-    if (usuario.esCajero) {
-      // Dos interfaces independientes, cada una «include» Buscar Orden de Reserva.
-      return [
-        _OpcionMenu('Devolver garantía', 'Buscar la reserva y devolver la garantía',
-            Icons.assignment_return_outlined, () => const DevolverGarantiaScreen()),
-        _OpcionMenu('Emitir comprobante', 'Buscar la reserva y emitir el comprobante',
-            Icons.receipt_long_outlined, () => const EmitirComprobanteScreen()),
-        precios,
-      ];
-    }
     if (usuario.esJefe) {
-      // Jefe de Logística: mantenimiento (2 fases) + consulta de reservas.
+      // Jefe de Logística: Registrar Orden de Mantenimiento
+      // («include» Buscar Vehículo y Buscar Mecánico).
       return [
-        ordenesMantenimiento,
-        vehiculosEstado,
-        _OpcionMenu('Crear orden de mantenimiento', 'Buscar vehículo e iniciar una OM',
+        _OpcionMenu('Registrar orden de mantenimiento',
+            'Buscar vehículo, asignar mecánico y registrar la orden',
             Icons.add_box_outlined, () => const CrearOrdenScreen()),
-        repuestos,
-        reservasInternas,
       ];
     }
-    // Rol sin acceso (p. ej. Asesor de Ventas, eliminado del sistema).
+    // Rol sin acceso (Asesor de Ventas, Cajero y Mecánico: eliminados del sistema).
     return [];
   }
 }
