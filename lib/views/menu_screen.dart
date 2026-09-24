@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/usuario.dart';
 import '../state/auth_controller.dart';
 import '../theme.dart';
+import 'buscar_orden_screen.dart';
 import 'cliente/detalle_vehiculo_screen.dart';
 import 'cliente/mis_reservas_screen.dart';
 import 'crear_orden_screen.dart';
@@ -145,6 +146,9 @@ class MenuScreen extends StatelessWidget {
         _OpcionMenu('Registrar orden de mantenimiento',
             'Buscar vehículo, asignar mecánico y registrar la orden',
             Icons.add_box_outlined, () => const CrearOrdenScreen()),
+        _OpcionMenu('Buscar orden de mantenimiento',
+            'Consultar las órdenes registradas',
+            Icons.manage_search_outlined, () => const BuscarOrdenScreen()),
       ];
     }
     // Rol sin acceso (Asesor de Ventas, Cajero y Mecánico: eliminados del sistema).

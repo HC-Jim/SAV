@@ -22,6 +22,12 @@ class MantenimientoService {
     return data.map((e) => Usuario.fromJson(e)).toList();
   }
 
+  // Buscar Orden de Mantenimiento (consulta de órdenes registradas).
+  Future<List<OrdenMantenimiento>> listarOrdenes() async {
+    final data = await _api.get('$_base/ordenes') as List;
+    return data.map((e) => OrdenMantenimiento.fromJson(e)).toList();
+  }
+
   // Registrar Orden de Mantenimiento (Jefe de Logística)
   Future<OrdenMantenimiento> crearOrden({
     required int vehiculoId,
