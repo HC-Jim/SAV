@@ -1,4 +1,8 @@
-/// Vehiculo de la flota.
+/// Vehículo de la flota.
+///
+/// Modelo de precios simplificado: cada auto tiene un **precio de alquiler
+/// fijo** (por el periodo por defecto) y un **costo de garantía fijo**, ambos
+/// editables por el Administrador en "Catálogo de precios".
 class Vehiculo {
   final int id;
   final String? sku;
@@ -8,13 +12,14 @@ class Vehiculo {
   final int? anio;
   final String? color;
   final String? categoria;
-  final double precioRegular;
-  final double precioNormal;
-  final double precioCampania;
-  final int diasMinCampania;
+  final double precioAlquiler; // precio fijo total del alquiler
+  final double garantia;       // costo de garantía fijo (depósito)
   final int? kilometraje;
   final String? fechaProximoMantenimiento;
   final String? estado;
+
+  /// Días de alquiler por defecto.
+  static const int diasPorDefecto = 3;
 
   Vehiculo({
     required this.id,
@@ -25,10 +30,8 @@ class Vehiculo {
     this.anio,
     this.color,
     this.categoria,
-    this.precioRegular = 0,
-    this.precioNormal = 0,
-    this.precioCampania = 0,
-    this.diasMinCampania = 7,
+    this.precioAlquiler = 0,
+    this.garantia = 0,
     this.kilometraje,
     this.fechaProximoMantenimiento,
     this.estado,
@@ -43,10 +46,8 @@ class Vehiculo {
         anio: json['anio'] as int?,
         color: json['color'] as String?,
         categoria: json['categoria'] as String?,
-        precioRegular: (json['precio_regular'] as num?)?.toDouble() ?? 0,
-        precioNormal: (json['precio_normal'] as num?)?.toDouble() ?? 0,
-        precioCampania: (json['precio_campania'] as num?)?.toDouble() ?? 0,
-        diasMinCampania: json['dias_min_campania'] as int? ?? 7,
+        precioAlquiler: (json['precio_normal'] as num?)?.toDouble() ?? 0,
+        garantia: (json['garantia'] as num?)?.toDouble() ?? 0,
         kilometraje: json['kilometraje'] as int?,
         fechaProximoMantenimiento: json['fecha_proximo_mantenimiento'] as String?,
         estado: json['estado'] as String?,
@@ -65,15 +66,5 @@ class Vehiculo {
     }
   }
 
-  String get descripcion =>
-      '$placa · ${marca ?? ''} ${modelo ?? ''}'.trim();
-
-  /// Factor de garantía = tarifa diaria × este valor (coincide con el backend).
-  static const int factorGarantia = 5;
-
-  /// Precio por día aplicable según los días (normal o campaña).
-  double precioPara(int dias) {
-    if (precioCampania > 0 && dias >= diasMinCampania) return precioCampania;
-    return precioNormal;
-  }
+  String get descripcion => '$placa · ${marca ?? ''} ${modelo ?? ''}'.trim();
 }

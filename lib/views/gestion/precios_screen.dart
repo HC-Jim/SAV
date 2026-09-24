@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/vehiculo.dart';
-import '../../services/alquiler_service.dart';
 import '../../services/api_client.dart';
 import '../../services/gestion_service.dart';
 import '../../state/auth_controller.dart';
+import '../../widgets/selector_vehiculo.dart';
 
-/// Catálogo de Precios: «include» Buscar Vehículo. Cualquier usuario puede
-/// consultar los precios (por día) de un vehículo; solo el Administrador puede
-/// editarlos.
+/// Catálogo de Precios — «include» Buscar Vehículo.
+/// Se elige el vehículo con el buscador reutilizable y luego se ve/edita su
+/// precio de alquiler fijo y su costo de garantía.
 class PreciosScreen extends StatefulWidget {
   const PreciosScreen({super.key});
   @override
@@ -16,18 +16,8 @@ class PreciosScreen extends StatefulWidget {
 }
 
 class _PreciosScreenState extends State<PreciosScreen> {
-  final _alquiler = AlquilerService();
   final _gestion = GestionService();
-  late Future<List<Vehiculo>> _futuro;
-  String _filtro = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _cargar();
-  }
-
-  void _cargar() => setState(() => _futuro = _alquiler.catalogo(soloDisponibles: false));
+  Vehiculo? _sel;
 
   void _snack(String m) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
@@ -35,127 +25,117 @@ class _PreciosScreenState extends State<PreciosScreen> {
   @override
   Widget build(BuildContext context) {
     final esAdmin = context.watch<AuthController>().usuario?.esAdministrador ?? false;
+    final v = _sel;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Catálogo de precios'),
-        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _cargar)],
-      ),
-      body: Column(
+      appBar: AppBar(title: const Text('Catálogo de precios')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-            child: TextField(
-              decoration: const InputDecoration(
-                labelText: 'Buscar vehículo',
-                hintText: 'Placa, marca o modelo…',
-                prefixIcon: Icon(Icons.search),
-                isDense: true,
+          // «include» Buscar Vehículo
+          SelectorVehiculo(
+            value: _sel,
+            label: 'Buscar vehículo',
+            onChanged: (veh) => setState(() => _sel = veh),
+          ),
+          const SizedBox(height: 16),
+          if (v == null)
+            const Padding(
+              padding: EdgeInsets.only(top: 24),
+              child: Center(
+                child: Text('Busca y elige un vehículo para ver o editar su precio.',
+                    style: TextStyle(color: Colors.black54)),
               ),
-              onChanged: (t) => setState(() => _filtro = t.toLowerCase()),
+            )
+          else
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(v.descripcion,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text('Categoría: ${v.categoria ?? '-'}  ·  ${v.estadoLegible}',
+                        style: const TextStyle(color: Colors.black54)),
+                    const Divider(height: 24),
+                    _fila('Precio de alquiler (${Vehiculo.diasPorDefecto} días)',
+                        'S/ ${v.precioAlquiler.toStringAsFixed(2)}'),
+                    _fila('Garantía (depósito)', 'S/ ${v.garantia.toStringAsFixed(2)}'),
+                    if (esAdmin) ...[
+                      const SizedBox(height: 12),
+                      FilledButton.icon(
+                        onPressed: () => _editar(v),
+                        icon: const Icon(Icons.edit_outlined),
+                        label: const Text('Editar precio y garantía'),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
-          ),
-          Expanded(
-            child: FutureBuilder<List<Vehiculo>>(
-              future: _futuro,
-              builder: (context, snap) {
-                if (snap.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snap.hasError) return Center(child: Text('${snap.error}'));
-                final todos = snap.data ?? [];
-                final lista = _filtro.isEmpty
-                    ? todos
-                    : todos.where((v) => v.descripcion.toLowerCase().contains(_filtro)).toList();
-                if (lista.isEmpty) return const Center(child: Text('Sin vehículos.'));
-                return ListView(
-                  padding: const EdgeInsets.all(12),
-                  children: lista.map((v) => _card(v, esAdmin)).toList(),
-                );
-              },
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _card(Vehiculo v, bool esAdmin) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _fila(String k, String val) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(v.descripcion,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                ),
-                if (esAdmin)
-                  IconButton(
-                      icon: const Icon(Icons.edit_outlined),
-                      onPressed: () => _editarPrecio(v)),
-              ],
-            ),
-            Text('SKU: ${v.sku ?? '-'}  ·  Categoría: ${v.categoria ?? '-'}  ·  ${v.estadoLegible}',
-                style: const TextStyle(color: Colors.black54)),
-            const SizedBox(height: 6),
-            Text('Regular: S/ ${v.precioRegular.toStringAsFixed(2)} / día'),
-            Text('Normal: S/ ${v.precioNormal.toStringAsFixed(2)} / día'),
-            Text('Campaña: S/ ${v.precioCampania.toStringAsFixed(2)} / día  '
-                '(desde ${v.diasMinCampania} días)'),
+            Text(k, style: const TextStyle(color: Colors.black87)),
+            Text(val, style: const TextStyle(fontWeight: FontWeight.bold)),
           ],
         ),
-      ),
-    );
-  }
+      );
 
-  Future<void> _editarPrecio(Vehiculo v) async {
-    final regular = TextEditingController(text: v.precioRegular.toString());
-    final normal = TextEditingController(text: v.precioNormal.toString());
-    final campania = TextEditingController(text: v.precioCampania.toString());
-    final diasMin = TextEditingController(text: v.diasMinCampania.toString());
+  Future<void> _editar(Vehiculo v) async {
+    final precio = TextEditingController(text: v.precioAlquiler.toStringAsFixed(2));
+    final garantia = TextEditingController(text: v.garantia.toStringAsFixed(2));
 
     final datos = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (_) => AlertDialog(
         title: Text('Precio · ${v.placa}'),
-        content: SingleChildScrollView(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            _campo(regular, 'Precio regular (S/ por día)'),
-            _campo(normal, 'Precio normal (S/ por día)'),
-            _campo(campania, 'Precio campaña (S/ por día)'),
-            _campo(diasMin, 'Días mínimos para campaña'),
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text('El precio regular debe ser mayor al normal.',
-                  style: TextStyle(fontSize: 12, color: Colors.black54)),
-            ),
-          ]),
-        ),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          _campo(precio, 'Precio de alquiler (S/ por ${Vehiculo.diasPorDefecto} días)'),
+          _campo(garantia, 'Garantía / depósito (S/)'),
+        ]),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
           FilledButton(
             onPressed: () => Navigator.pop(context, {
-              'precio_regular': double.tryParse(regular.text.trim()) ?? 0,
-              'precio_normal': double.tryParse(normal.text.trim()) ?? 0,
-              'precio_campania': double.tryParse(campania.text.trim()) ?? 0,
-              'dias_min_campania': int.tryParse(diasMin.text.trim()) ?? 7,
+              'precio_normal': double.tryParse(precio.text.trim()) ?? 0,
+              'garantia': double.tryParse(garantia.text.trim()) ?? 0,
             }),
             child: const Text('Guardar'),
           ),
         ],
       ),
     );
-    if (datos != null) {
-      try {
-        await _gestion.actualizarPrecioVehiculo(v.id, datos);
-        if (mounted) _cargar();
-      } on ApiException catch (e) {
-        _snack(e.mensaje);
-      }
+    if (datos == null) return;
+    try {
+      await _gestion.actualizarPrecioVehiculo(v.id, datos);
+      if (!mounted) return;
+      // Refleja los nuevos valores en la tarjeta.
+      setState(() => _sel = Vehiculo(
+            id: v.id,
+            sku: v.sku,
+            placa: v.placa,
+            marca: v.marca,
+            modelo: v.modelo,
+            anio: v.anio,
+            color: v.color,
+            categoria: v.categoria,
+            precioAlquiler: datos['precio_normal'] as double,
+            garantia: datos['garantia'] as double,
+            kilometraje: v.kilometraje,
+            fechaProximoMantenimiento: v.fechaProximoMantenimiento,
+            estado: v.estado,
+          ));
+      _snack('Precio actualizado');
+    } on ApiException catch (e) {
+      _snack(e.mensaje);
     }
   }
 

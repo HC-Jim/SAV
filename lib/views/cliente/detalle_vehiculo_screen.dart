@@ -22,6 +22,14 @@ class _DetalleVehiculoScreenState extends State<DetalleVehiculoScreen> {
   bool _disponible = false;
   bool _procesando = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // Periodo por defecto: 3 días desde hoy.
+    _inicio = DateTime.now();
+    _fin = _inicio!.add(const Duration(days: Vehiculo.diasPorDefecto));
+  }
+
   String _fmt(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
@@ -88,7 +96,9 @@ class _DetalleVehiculoScreenState extends State<DetalleVehiculoScreen> {
                   _fila('Color', v.color ?? '-'),
                   _fila('SKU', v.sku ?? '-'),
                   _fila('Categoría', v.categoria ?? '-'),
-                  _fila('Precio', 'S/ ${v.precioNormal.toStringAsFixed(2)} / día'),
+                  _fila('Precio de alquiler',
+                      'S/ ${v.precioAlquiler.toStringAsFixed(2)} (${Vehiculo.diasPorDefecto} días)'),
+                  _fila('Garantía', 'S/ ${v.garantia.toStringAsFixed(2)}'),
                 ],
               ),
             ),
@@ -167,15 +177,14 @@ class _DetalleVehiculoScreenState extends State<DetalleVehiculoScreen> {
     }
   }
 
-  /// Resumen del costo estimado (alquiler + garantía) según las fechas.
+  /// Resumen del costo (precio de alquiler fijo + garantía fija).
   Widget _resumenEstimado() {
     final v = widget.vehiculo;
     final dias = _fin!.difference(_inicio!).inDays <= 0
-        ? 1
+        ? Vehiculo.diasPorDefecto
         : _fin!.difference(_inicio!).inDays;
-    final tarifa = v.precioPara(dias);
-    final alquiler = tarifa * dias;
-    final garantia = tarifa * Vehiculo.factorGarantia;
+    final alquiler = v.precioAlquiler; // precio fijo, no depende de los días
+    final garantia = v.garantia;
     final total = alquiler + garantia;
     Widget fila(String k, String val, {bool bold = false}) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 3),
@@ -204,8 +213,7 @@ class _DetalleVehiculoScreenState extends State<DetalleVehiculoScreen> {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
               const SizedBox(height: 8),
               fila('Días', '$dias'),
-              fila('Precio por día', 'S/ ${tarifa.toStringAsFixed(2)}'),
-              fila('Alquiler', 'S/ ${alquiler.toStringAsFixed(2)}'),
+              fila('Precio de alquiler', 'S/ ${alquiler.toStringAsFixed(2)}'),
               fila('Garantía (depósito)', 'S/ ${garantia.toStringAsFixed(2)}'),
               const Divider(),
               fila('Total a pagar', 'S/ ${total.toStringAsFixed(2)}', bold: true),
