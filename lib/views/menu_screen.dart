@@ -8,6 +8,7 @@ import 'cliente/mis_reservas_screen.dart';
 import 'crear_orden_screen.dart';
 import 'gestion/editar_vehiculo_screen.dart';
 import 'gestion/precios_screen.dart';
+import 'gestion/registrar_seguro_screen.dart';
 import 'gestion/seguros_screen.dart';
 import 'lista_vehiculos_screen.dart';
 import 'login_screen.dart';
@@ -114,26 +115,26 @@ class MenuScreen extends StatelessWidget {
     }
     if (usuario.esAdministrador) {
       return [
-        // Registrar Precio de Alquiler: gestión de la flota y su precio por día.
+        // Editar datos del vehículo (solo edición; sin crear).
         _OpcionMenu(
-            'Gestión de vehículos',
-            'Registrar vehículos y su precio de alquiler',
-            Icons.garage_outlined,
+            'Editar datos del vehículo',
+            'Buscar un vehículo y editar sus datos',
+            Icons.directions_car_outlined,
             () => ListaVehiculosScreen(
-                  titulo: 'Vehículos',
+                  titulo: 'Editar datos del vehículo',
                   onSeleccionar: (ctx, v) async {
                     await Navigator.of(ctx).push(MaterialPageRoute(
                         builder: (_) => EditarVehiculoScreen(vehiculo: v)));
                   },
-                  onAgregar: (ctx) async {
-                    await Navigator.of(ctx).push(MaterialPageRoute(
-                        builder: (_) => const EditarVehiculoScreen()));
-                  },
                 )),
-        _OpcionMenu('Catálogo de precios', 'Consultar precios por día del vehículo',
+        // Registrar Precio de Alquiler y garantía.
+        _OpcionMenu('Catálogo de precios', 'Editar precio de alquiler y garantía',
             Icons.sell_outlined, () => const PreciosScreen()),
-        // Registrar Seguro.
-        _OpcionMenu('Seguros', 'Registrar pólizas de seguro de la flota',
+        // Registrar Seguro (interfaz completa).
+        _OpcionMenu('Registrar seguro', 'Registrar una póliza de seguro',
+            Icons.add_moderator_outlined, () => const RegistrarSeguroScreen()),
+        // Buscar Seguro (interfaz de consulta).
+        _OpcionMenu('Buscar seguro', 'Consultar las pólizas registradas',
             Icons.shield_outlined, () => const SegurosScreen()),
       ];
     }

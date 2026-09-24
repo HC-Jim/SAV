@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../models/seguro.dart';
-import '../../models/vehiculo.dart';
-import '../../services/api_client.dart';
 import '../../services/gestion_service.dart';
-import '../../widgets/selector_vehiculo.dart';
 
-/// Registrar Pólizas / Seguros + alerta de vencimiento (CUS017 / CUS018).
+/// Buscar Seguro — interfaz de consulta/búsqueda de pólizas registradas.
+/// (El registro se hace en la interfaz "Registrar seguro".)
 class SegurosScreen extends StatefulWidget {
   const SegurosScreen({super.key});
   @override
@@ -15,6 +13,7 @@ class SegurosScreen extends StatefulWidget {
 class _SegurosScreenState extends State<SegurosScreen> {
   final _svc = GestionService();
   late Future<List<Seguro>> _futuro;
+  String _filtro = '';
 
   @override
   void initState() {
@@ -24,31 +23,51 @@ class _SegurosScreenState extends State<SegurosScreen> {
 
   void _cargar() => setState(() => _futuro = _svc.listarSeguros());
 
-  void _snack(String m) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Seguros y pólizas')),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _abrirForm,
-        child: const Icon(Icons.add),
+      appBar: AppBar(
+        title: const Text('Buscar seguro'),
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _cargar)],
       ),
-      body: FutureBuilder<List<Seguro>>(
-        future: _futuro,
-        builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snap.hasError) return Center(child: Text('${snap.error}'));
-          final lista = snap.data ?? [];
-          if (lista.isEmpty) return const Center(child: Text('Sin pólizas registradas.'));
-          return ListView(
-            padding: const EdgeInsets.all(12),
-            children: lista.map(_card).toList(),
-          );
-        },
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+            child: TextField(
+              decoration: const InputDecoration(
+                labelText: 'Buscar póliza',
+                hintText: 'Vehículo, tipo o N° de póliza…',
+                prefixIcon: Icon(Icons.search),
+                isDense: true,
+              ),
+              onChanged: (t) => setState(() => _filtro = t.toLowerCase()),
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<Seguro>>(
+              future: _futuro,
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snap.hasError) return Center(child: Text('${snap.error}'));
+                final todos = snap.data ?? [];
+                final lista = _filtro.isEmpty
+                    ? todos
+                    : todos.where((s) => (
+                          '${s.vehiculoDesc} ${s.tipoSeguro ?? ''} ${s.numPoliza ?? ''}')
+                        .toLowerCase()
+                        .contains(_filtro)).toList();
+                if (lista.isEmpty) return const Center(child: Text('Sin pólizas.'));
+                return ListView(
+                  padding: const EdgeInsets.all(12),
+                  children: lista.map(_card).toList(),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -56,19 +75,15 @@ class _SegurosScreenState extends State<SegurosScreen> {
   Widget _card(Seguro s) {
     final dias = s.diasParaVencer;
     final vencido = dias != null && dias < 0;
-    final proximo = dias != null && dias >= 0 && dias <= 30;
     String etiqueta;
     if (vencido) {
       etiqueta = 'Vencida hace ${-dias} días';
-    } else if (proximo) {
-      etiqueta = 'Vence en $dias días';
     } else {
       etiqueta = dias != null ? 'Vence en $dias días' : 'Sin fecha';
     }
-    final color = vencido ? Colors.black : Colors.black54;
     return Card(
       child: ListTile(
-        leading: Icon(Icons.shield_outlined, color: color),
+        leading: Icon(Icons.shield_outlined, color: vencido ? Colors.black : Colors.black54),
         title: Text('${s.tipoSeguro ?? 'Seguro'}  ·  ${s.numPoliza ?? ''}'),
         subtitle: Text('${s.vehiculoDesc}\n${s.aseguradoraEntidad ?? ''}  ·  vence: ${s.fechaVencimiento ?? '-'}\n'
             '$etiqueta'),
@@ -76,63 +91,4 @@ class _SegurosScreenState extends State<SegurosScreen> {
       ),
     );
   }
-
-  Future<void> _abrirForm() async {
-    Vehiculo? vehiculoSel;
-    final tipo = TextEditingController(text: 'SOAT');
-    final poliza = TextEditingController();
-    final aseguradora = TextEditingController();
-    final emision = TextEditingController();
-    final vencimiento = TextEditingController();
-
-    final datos = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (_) => StatefulBuilder(
-        builder: (context, setLocal) => AlertDialog(
-          title: const Text('Nueva póliza'),
-          content: SingleChildScrollView(
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              SelectorVehiculo(
-                value: vehiculoSel,
-                onChanged: (v) => setLocal(() => vehiculoSel = v),
-              ),
-              _campo(tipo, 'Tipo (SOAT / TODO_RIESGO)'),
-              _campo(poliza, 'N° de póliza'),
-              _campo(aseguradora, 'Aseguradora'),
-              _campo(emision, 'Fecha emisión (YYYY-MM-DD)'),
-              _campo(vencimiento, 'Fecha vencimiento (YYYY-MM-DD)'),
-            ]),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, {
-                'vehiculo_id': vehiculoSel?.id,
-                'tipo_seguro': tipo.text.trim(),
-                'num_poliza': poliza.text.trim(),
-                'aseguradora_entidad': aseguradora.text.trim(),
-                'fecha_emision': emision.text.trim().isEmpty ? null : emision.text.trim(),
-                'fecha_vencimiento': vencimiento.text.trim().isEmpty ? null : vencimiento.text.trim(),
-              }),
-              child: const Text('Guardar'),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (datos != null && datos['vehiculo_id'] != null) {
-      try {
-        await _svc.crearSeguro(datos);
-        if (mounted) _cargar();
-      } on ApiException catch (e) {
-        _snack(e.mensaje);
-      }
-    }
-  }
-
-  Widget _campo(TextEditingController c, String label) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: TextField(controller: c, decoration: InputDecoration(labelText: label)),
-      );
 }

@@ -3,12 +3,10 @@ import '../../models/vehiculo.dart';
 import '../../services/api_client.dart';
 import '../../services/gestion_service.dart';
 
-/// Editar / eliminar (o crear) un vehículo. Se abre desde Gestión de vehículos
-/// (Administrador) al tocar un vehículo de la lista.
+/// Editar los datos de un vehículo existente (Administrador).
 class EditarVehiculoScreen extends StatefulWidget {
-  /// `null` = crear un vehículo nuevo.
-  final Vehiculo? vehiculo;
-  const EditarVehiculoScreen({super.key, this.vehiculo});
+  final Vehiculo vehiculo;
+  const EditarVehiculoScreen({super.key, required this.vehiculo});
 
   @override
   State<EditarVehiculoScreen> createState() => _EditarVehiculoScreenState();
@@ -27,19 +25,17 @@ class _EditarVehiculoScreenState extends State<EditarVehiculoScreen> {
   late String _categoria;
   bool _guardando = false;
 
-  bool get _esNuevo => widget.vehiculo == null;
-
   @override
   void initState() {
     super.initState();
     final v = widget.vehiculo;
-    _sku = TextEditingController(text: v?.sku ?? '');
-    _placa = TextEditingController(text: v?.placa ?? '');
-    _marca = TextEditingController(text: v?.marca ?? '');
-    _modelo = TextEditingController(text: v?.modelo ?? '');
-    _anio = TextEditingController(text: v?.anio?.toString() ?? '');
-    _color = TextEditingController(text: v?.color ?? '');
-    _categoria = (v?.categoria != null && _categorias.contains(v!.categoria))
+    _sku = TextEditingController(text: v.sku ?? '');
+    _placa = TextEditingController(text: v.placa);
+    _marca = TextEditingController(text: v.marca ?? '');
+    _modelo = TextEditingController(text: v.modelo ?? '');
+    _anio = TextEditingController(text: v.anio?.toString() ?? '');
+    _color = TextEditingController(text: v.color ?? '');
+    _categoria = (v.categoria != null && _categorias.contains(v.categoria))
         ? v.categoria!
         : _categorias.first;
   }
@@ -67,13 +63,9 @@ class _EditarVehiculoScreenState extends State<EditarVehiculoScreen> {
       'categoria': _categoria,
     };
     try {
-      if (_esNuevo) {
-        await _svc.crearVehiculo(datos);
-      } else {
-        await _svc.actualizarVehiculo(widget.vehiculo!.id, datos);
-      }
+      await _svc.actualizarVehiculo(widget.vehiculo.id, datos);
       if (!mounted) return;
-      _snack(_esNuevo ? 'Vehículo creado' : 'Vehículo actualizado');
+      _snack('Vehículo actualizado');
       Navigator.of(context).pop(true);
     } on ApiException catch (e) {
       if (mounted) _snack(e.mensaje);
@@ -82,43 +74,10 @@ class _EditarVehiculoScreenState extends State<EditarVehiculoScreen> {
     }
   }
 
-  Future<void> _eliminar() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Eliminar vehículo'),
-        content: Text('¿Eliminar ${widget.vehiculo!.placa}?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('No')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sí')),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    try {
-      await _svc.eliminarVehiculo(widget.vehiculo!.id);
-      if (!mounted) return;
-      _snack('Vehículo eliminado');
-      Navigator.of(context).pop(true);
-    } on ApiException catch (e) {
-      if (mounted) _snack(e.mensaje);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_esNuevo ? 'Nuevo vehículo' : 'Editar vehículo'),
-        actions: [
-          if (!_esNuevo)
-            IconButton(
-              tooltip: 'Eliminar',
-              icon: const Icon(Icons.delete_outline),
-              onPressed: _eliminar,
-            ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Editar datos del vehículo')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

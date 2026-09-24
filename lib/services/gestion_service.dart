@@ -15,12 +15,10 @@ class GestionService {
     return data.map((e) => Vehiculo.fromJson(e)).toList();
   }
 
-  Future<void> crearVehiculo(Map<String, dynamic> datos) => _api.post('$_base/vehiculos', datos);
   Future<void> actualizarVehiculo(int id, Map<String, dynamic> datos) =>
       _api.patch('$_base/vehiculos/$id', datos);
   Future<void> actualizarPrecioVehiculo(int id, Map<String, dynamic> datos) =>
       _api.patch('$_base/vehiculos/$id/precio', datos);
-  Future<void> eliminarVehiculo(int id) => _api.delete('$_base/vehiculos/$id');
 
   // ---- Clientes ----
   Future<List<Cliente>> listarClientes() async {
