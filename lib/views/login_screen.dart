@@ -112,12 +112,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       const Text('Usuarios de prueba:',
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                       const Text(
-                        'Jefe: jefe@autorent.pe / jefe123\n'
-                        'Mecánico: mecanico@autorent.pe / mecanico123\n'
+                        'Cliente: carla@autorent.pe / cliente123\n'
                         'Administrador: admin@autorent.pe / admin123\n'
-                        'Asesor: asesor@autorent.pe / asesor123\n'
-                        'Cajero: cajero@autorent.pe / cajero123\n'
-                        'Cliente: carla@autorent.pe / cliente123',
+                        'Jefe de Logística: jefe@autorent.pe / jefe123',
                         style: TextStyle(fontSize: 12, color: Colors.black54),
                       ),
                     ],

@@ -1,4 +1,5 @@
-/// Actor del proceso: Jefe de Logistica o Mecanico.
+/// Usuario del sistema. Actores con acceso: Cliente, Administrador y Jefe de
+/// Logística. (MECANICO existe como dato asignable a la orden, sin acceso.)
 class Usuario {
   final int id;
   final String nombre;
@@ -50,24 +51,17 @@ class Usuario {
   }
 
   bool get esJefe => rol == 'JEFE_LOGISTICA';
-  bool get esMecanico => rol == 'MECANICO';
   bool get esCliente => rol == 'CLIENTE';
   bool get esAdministrador => rol == 'ADMINISTRADOR';
-  bool get esAsesor => rol == 'ASESOR_VENTAS';
-  bool get esCajero => rol == 'CAJERO';
 
   String get rolLegible {
     switch (rol) {
       case 'JEFE_LOGISTICA':
         return 'Jefe de Logística';
       case 'MECANICO':
-        return 'Mecánico';
+        return 'Mecánico'; // dato: el mecánico se asigna a la orden, pero no accede
       case 'ADMINISTRADOR':
         return 'Administrador';
-      case 'ASESOR_VENTAS':
-        return 'Asesor de Ventas';
-      case 'CAJERO':
-        return 'Cajero';
       case 'CLIENTE':
         return 'Cliente';
       default:
