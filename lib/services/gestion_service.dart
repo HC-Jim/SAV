@@ -15,10 +15,24 @@ class GestionService {
     return data.map((e) => Vehiculo.fromJson(e)).toList();
   }
 
+  Future<void> crearVehiculo(Map<String, dynamic> datos) =>
+      _api.post('$_base/vehiculos', datos);
   Future<void> actualizarVehiculo(int id, Map<String, dynamic> datos) =>
       _api.patch('$_base/vehiculos/$id', datos);
   Future<void> actualizarPrecioVehiculo(int id, Map<String, dynamic> datos) =>
       _api.patch('$_base/vehiculos/$id/precio', datos);
+
+  /// Historial de precios + estadísticas (último, promedio, variación).
+  Future<Map<String, dynamic>> historialPrecios(int id) async {
+    final data = await _api.get('$_base/vehiculos/$id/precios');
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  // ---- Cupones ----
+  Future<List<Map<String, dynamic>>> listarCupones() async {
+    final data = await _api.get('$_base/cupones') as List;
+    return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
 
   // ---- Clientes ----
   Future<List<Cliente>> listarClientes() async {

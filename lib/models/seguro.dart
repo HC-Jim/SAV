@@ -7,6 +7,10 @@ class Seguro {
   final String? aseguradoraEntidad;
   final String? fechaEmision;
   final String? fechaVencimiento;
+  final double? sumaAsegurada;
+  final double? prima;
+  final String? cobertura;
+  final String? observaciones;
   final int? diasParaVencer;
   final Map<String, dynamic>? vehiculo;
 
@@ -18,6 +22,10 @@ class Seguro {
         aseguradoraEntidad = j['aseguradora_entidad'],
         fechaEmision = j['fecha_emision'],
         fechaVencimiento = j['fecha_vencimiento'],
+        sumaAsegurada = (j['suma_asegurada'] as num?)?.toDouble(),
+        prima = (j['prima'] as num?)?.toDouble(),
+        cobertura = j['cobertura'],
+        observaciones = j['observaciones'],
         diasParaVencer = j['dias_para_vencer'],
         vehiculo = j['vehiculo'] as Map<String, dynamic>?;
 

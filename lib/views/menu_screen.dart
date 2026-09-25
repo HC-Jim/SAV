@@ -4,14 +4,13 @@ import '../models/usuario.dart';
 import '../state/auth_controller.dart';
 import '../theme.dart';
 import 'buscar_orden_screen.dart';
-import 'cliente/detalle_vehiculo_screen.dart';
-import 'cliente/mis_reservas_screen.dart';
+import 'cliente/realizar_pago_screen.dart';
+import 'cliente/reservar_vehiculo_screen.dart';
 import 'crear_orden_screen.dart';
-import 'gestion/editar_vehiculo_screen.dart';
-import 'gestion/precios_screen.dart';
+import 'gestion/cupones_screen.dart';
 import 'gestion/registrar_seguro_screen.dart';
 import 'gestion/seguros_screen.dart';
-import 'lista_vehiculos_screen.dart';
+import 'gestion/vehiculos_screen.dart';
 import 'login_screen.dart';
 
 /// Menú principal. Muestra opciones según el rol del usuario.
@@ -100,43 +99,28 @@ class MenuScreen extends StatelessWidget {
   List<_OpcionMenu> _opcionesPorRol(Usuario usuario) {
     if (usuario.esCliente) {
       return [
-        // Generar Orden de Reserva: buscar vehículo → generar la orden.
+        // Generar Orden de Reserva: interfaz → «include» Buscar Vehículo.
         _OpcionMenu('Reservar vehículo', 'Buscar vehículo y generar la orden de reserva',
-            Icons.event_available_outlined, () => ListaVehiculosScreen(
-                  titulo: 'Reservar vehículo',
-                  onSeleccionar: (ctx, v) async {
-                    await Navigator.of(ctx).push(MaterialPageRoute(
-                        builder: (_) => DetalleVehiculoScreen(vehiculo: v)));
-                  },
-                )),
-        // Registrar Pago de Orden de Reserva: garantía + alquiler (emite comprobante).
-        _OpcionMenu('Mis reservas', 'Pagar la orden de reserva (garantía + alquiler)',
-            Icons.receipt_long_outlined, () => const MisReservasScreen()),
+            Icons.event_available_outlined, () => const ReservarVehiculoScreen()),
+        // Registrar Pago de Orden de Reserva: interfaz → «include» Buscar Reserva.
+        _OpcionMenu('Realizar pago', 'Elegir la reserva y pagar (tarjeta o Yape)',
+            Icons.payments_outlined, () => const RealizarPagoScreen()),
       ];
     }
     if (usuario.esAdministrador) {
       return [
-        // Editar datos del vehículo (solo edición; sin crear).
-        _OpcionMenu(
-            'Editar datos del vehículo',
-            'Buscar un vehículo y editar sus datos',
-            Icons.directions_car_outlined,
-            () => ListaVehiculosScreen(
-                  titulo: 'Editar datos del vehículo',
-                  onSeleccionar: (ctx, v) async {
-                    await Navigator.of(ctx).push(MaterialPageRoute(
-                        builder: (_) => EditarVehiculoScreen(vehiculo: v)));
-                  },
-                )),
-        // Registrar Precio de Alquiler y garantía.
-        _OpcionMenu('Catálogo de precios', 'Editar precio de alquiler y garantía',
-            Icons.sell_outlined, () => const PreciosScreen()),
+        // Vehículos (CRUD): editar datos y/o precio, ver variación, crear nuevo.
+        _OpcionMenu('Vehículos', 'Editar datos y precios, o crear un vehículo',
+            Icons.directions_car_outlined, () => const VehiculosScreen()),
         // Registrar Seguro (interfaz completa).
         _OpcionMenu('Registrar seguro', 'Registrar una póliza de seguro',
             Icons.add_moderator_outlined, () => const RegistrarSeguroScreen()),
         // Buscar Seguro (interfaz de consulta).
         _OpcionMenu('Buscar seguro', 'Consultar las pólizas registradas',
             Icons.shield_outlined, () => const SegurosScreen()),
+        // Cupones (tabla de descuentos).
+        _OpcionMenu('Cupones', 'Ver los cupones y su estado',
+            Icons.local_offer_outlined, () => const CuponesScreen()),
       ];
     }
     if (usuario.esJefe) {

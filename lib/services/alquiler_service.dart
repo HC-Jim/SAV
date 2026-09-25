@@ -45,8 +45,37 @@ class AlquilerService {
         'fecha_fin': fechaFin,
       });
 
+  /// Aplicar Cupón: valida el código sobre el alquiler de la reserva.
+  /// Devuelve {codigo, tipo, valor, descuento}.
+  Future<Map<String, dynamic>> validarCupon(int reservaId, String codigo) async {
+    final data = await _api.post('$_base/reservas/$reservaId/cupon', {'codigo': codigo});
+    return Map<String, dynamic>.from(data as Map);
+  }
+
   /// 2. Registrar Pago de Orden de Reserva (Cliente): garantía + alquiler → RESERVADO
-  /// (emite el comprobante como parte del pago).
-  Future<void> pagarOrdenReserva(int reservaId, {String metodo = 'TARJETA'}) =>
-      _api.patch('$_base/reservas/$reservaId/pagar', {'metodo': metodo});
+  /// (emite el comprobante como parte del pago). Admite Tarjeta (crédito/débito,
+  /// cuotas) o Yape, y un cupón de descuento.
+  Future<Map<String, dynamic>> pagarOrdenReserva(
+    int reservaId, {
+    required String metodo, // TARJETA / YAPE
+    String? tipoTarjeta, // CREDITO / DEBITO
+    int? cuotas,
+    String? tarjetaUltimos4,
+    String? tarjetaMarca,
+    String? yapeCelular,
+    String? yapeOperacion,
+    String? cuponCodigo,
+  }) async {
+    final body = <String, dynamic>{'metodo': metodo};
+    if (tipoTarjeta != null) body['tipo_tarjeta'] = tipoTarjeta;
+    if (cuotas != null) body['cuotas'] = cuotas;
+    if (cuponCodigo != null && cuponCodigo.isNotEmpty) body['cupon_codigo'] = cuponCodigo;
+    if (metodo == 'TARJETA') {
+      body['tarjeta'] = {'ultimos4': tarjetaUltimos4, 'marca': tarjetaMarca};
+    } else if (metodo == 'YAPE') {
+      body['yape'] = {'celular': yapeCelular, 'operacion': yapeOperacion};
+    }
+    final data = await _api.patch('$_base/reservas/$reservaId/pagar', body);
+    return Map<String, dynamic>.from(data as Map);
+  }
 }

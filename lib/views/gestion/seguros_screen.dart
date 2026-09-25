@@ -81,12 +81,17 @@ class _SegurosScreenState extends State<SegurosScreen> {
     } else {
       etiqueta = dias != null ? 'Vence en $dias días' : 'Sin fecha';
     }
+    final montos = [
+      if (s.sumaAsegurada != null) 'Suma: S/ ${s.sumaAsegurada!.toStringAsFixed(2)}',
+      if (s.prima != null) 'Prima: S/ ${s.prima!.toStringAsFixed(2)}',
+    ].join('  ·  ');
     return Card(
       child: ListTile(
         leading: Icon(Icons.shield_outlined, color: vencido ? Colors.black : Colors.black54),
         title: Text('${s.tipoSeguro ?? 'Seguro'}  ·  ${s.numPoliza ?? ''}'),
         subtitle: Text('${s.vehiculoDesc}\n${s.aseguradoraEntidad ?? ''}  ·  vence: ${s.fechaVencimiento ?? '-'}\n'
-            '$etiqueta'),
+            '$etiqueta${montos.isNotEmpty ? '  ·  $montos' : ''}'
+            '${s.cobertura != null ? '\nCobertura: ${s.cobertura}' : ''}'),
         isThreeLine: true,
       ),
     );
