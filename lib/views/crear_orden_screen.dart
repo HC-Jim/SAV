@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/tipo_mantenimiento.dart';
 import '../models/usuario.dart';
 import '../models/vehiculo.dart';
-import '../models/orden_mantenimiento.dart';
 import '../services/api_client.dart';
 import '../services/mantenimiento_service.dart';
-import '../services/pdf_generator.dart';
 import '../widgets/selector_mecanico.dart';
 import '../widgets/selector_vehiculo.dart';
 
@@ -74,7 +72,7 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
         indicaciones: indicaciones,
       );
       if (!mounted) return;
-      await _flujoExito(orden, indicaciones);
+      await _mostrarExito(orden.id);
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } on ApiException catch (e) {
@@ -85,64 +83,20 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
     }
   }
 
-  /// «extends» Imprimir documento: éxito → ¿imprimir la orden en PDF?
-  Future<void> _flujoExito(OrdenMantenimiento orden, String? indicaciones) async {
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.check_circle, color: Colors.green, size: 40),
-        title: const Text('Orden creada con éxito'),
-        content: Text('La orden de mantenimiento #${orden.id} se registró correctamente.'),
-        actions: [
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Aceptar'),
-          ),
-        ],
-      ),
-    );
-    if (!mounted) return;
-
-    final imprimir = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        icon: const Icon(Icons.print_outlined, size: 36),
-        title: const Text('Imprimir documento'),
-        content: const Text('¿Desea imprimir el documento de la orden de mantenimiento?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton.icon(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            icon: const Icon(Icons.picture_as_pdf),
-            label: const Text('Imprimir'),
-          ),
-        ],
-      ),
-    );
-
-    if (imprimir == true) {
-      TipoMantenimiento? tipo;
-      for (final t in _tipos) {
-        if (t.id == _tipoId) {
-          tipo = t;
-          break;
-        }
-      }
-      await generarOrdenPdf(
-        id: orden.id,
-        vehiculo: _vehiculo!,
-        mecanico: _mecanico!.especialidad == null
-            ? _mecanico!.nombre
-            : '${_mecanico!.nombre} · ${_mecanico!.especialidad}',
-        tipo: tipo?.nombre ?? '-',
-        tipoDetalle: tipo?.frecuenciaTexto,
-        indicaciones: indicaciones,
+  Future<void> _mostrarExito(int id) => showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(Icons.check_circle, color: Colors.green, size: 40),
+          title: const Text('Orden creada con éxito'),
+          content: Text('La orden de mantenimiento #$id se registró correctamente.'),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Aceptar'),
+            ),
+          ],
+        ),
       );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
