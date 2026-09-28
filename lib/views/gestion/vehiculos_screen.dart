@@ -184,12 +184,13 @@ class _NuevoVehiculoScreenState extends State<_NuevoVehiculoScreen> {
   final _color = TextEditingController();
   final _precio = TextEditingController();
   final _garantia = TextEditingController();
+  final _costo = TextEditingController();
   String _categoria = _categorias.first;
   bool _guardando = false;
 
   @override
   void dispose() {
-    for (final c in [_placa, _marca, _modelo, _anio, _color, _precio, _garantia]) {
+    for (final c in [_placa, _marca, _modelo, _anio, _color, _precio, _garantia, _costo]) {
       c.dispose();
     }
     super.dispose();
@@ -214,6 +215,7 @@ class _NuevoVehiculoScreenState extends State<_NuevoVehiculoScreen> {
         'categoria': _categoria,
         'precio_normal': double.tryParse(_precio.text.trim()) ?? 0,
         'garantia': double.tryParse(_garantia.text.trim()) ?? 0,
+        'precio_costo': double.tryParse(_costo.text.trim()) ?? 0,
       });
       if (!mounted) return;
       Navigator.of(context).pop(true);
@@ -254,6 +256,7 @@ class _NuevoVehiculoScreenState extends State<_NuevoVehiculoScreen> {
           _campo(_precio, 'Precio de alquiler (S/ por ${Vehiculo.diasPorDefecto} días)',
               numero: true),
           _campo(_garantia, 'Garantía / depósito (S/)', numero: true),
+          _campo(_costo, 'Precio costo (S/)', numero: true),
           const SizedBox(height: 16),
           FilledButton.icon(
             onPressed: _guardando ? null : _crear,
