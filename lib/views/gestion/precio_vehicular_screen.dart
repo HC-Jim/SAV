@@ -80,10 +80,10 @@ class _PrecioVehicularScreenState extends State<PrecioVehicularScreen> {
     }
     setState(() => _guardando = true);
     try {
+      // El costo no se envía: el backend reutiliza el costo fijado en la compra.
       await _svc.actualizarPrecioVehiculo(_sel!.id, {
         'precio_normal': precio,
         'garantia': garantia,
-        'precio_costo': costo,
       });
       if (!mounted) return;
       _snack('Precio registrado');
@@ -139,7 +139,18 @@ class _PrecioVehicularScreenState extends State<PrecioVehicularScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold)),
             _campo(_precio, 'Precio de alquiler (S/ por ${Vehiculo.diasPorDefecto} días)'),
             _campo(_garantia, 'Garantía / depósito (S/)'),
-            _campo(_costo, 'Precio costo (S/)'),
+            // El costo se fija en la compra: aquí solo se muestra (bloqueado).
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: TextField(
+                controller: _costo,
+                enabled: false,
+                decoration: const InputDecoration(
+                  labelText: 'Precio costo (S/) — se fija en la compra',
+                  suffixIcon: Icon(Icons.lock_outline, size: 18),
+                ),
+              ),
+            ),
             _evaluacionMargen(),
             const SizedBox(height: 12),
             FilledButton.icon(
@@ -161,20 +172,22 @@ class _PrecioVehicularScreenState extends State<PrecioVehicularScreen> {
   /// Evaluación en vivo del margen (alquiler - costo).
   Widget _evaluacionMargen() {
     final m = _margenInput;
+    final pct = _costoInput > 0 ? (m / _costoInput) * 100 : 0;
+    final pctTxt = '${pct.toStringAsFixed(1)}%';
     final Color color;
     final String etiqueta;
     if (_costoInput <= 0) {
       color = Colors.black54;
-      etiqueta = 'Ingresa el costo para evaluar el margen';
+      etiqueta = 'Costo no definido: se fija en la compra';
     } else if (m > 0) {
       color = Colors.green.shade700;
-      etiqueta = '✔ Buen precio · Ganancia S/ ${m.toStringAsFixed(2)}';
+      etiqueta = '✔ Buen precio · Ganancia S/ ${m.toStringAsFixed(2)} ($pctTxt)';
     } else if (m == 0) {
       color = Colors.orange.shade800;
-      etiqueta = 'Sin margen (cubre el costo justo)';
+      etiqueta = 'Sin margen (cubre el costo justo · $pctTxt)';
     } else {
       color = Colors.red.shade700;
-      etiqueta = '✖ Pérdida S/ ${m.abs().toStringAsFixed(2)} · precio por debajo del costo';
+      etiqueta = '✖ Pérdida S/ ${m.abs().toStringAsFixed(2)} ($pctTxt) · por debajo del costo';
     }
     return Padding(
       padding: const EdgeInsets.only(top: 6),
@@ -198,6 +211,7 @@ class _PrecioVehicularScreenState extends State<PrecioVehicularScreen> {
     final variacionPct = (s?['variacion_pct'] as num?)?.toDouble();
     final costoActual = (s?['ultimo_costo'] as num?)?.toDouble();
     final margenActual = (s?['margen_actual'] as num?)?.toDouble();
+    final margenActualPct = (s?['margen_actual_pct'] as num?)?.toDouble();
     final cambios = (s?['cambios'] as num?)?.toInt();
     String varTexto() {
       if (variacion == null) return '—';
@@ -223,7 +237,9 @@ class _PrecioVehicularScreenState extends State<PrecioVehicularScreen> {
             _fila('Garantía actual', 'S/ ${v.garantia.toStringAsFixed(2)}'),
             if (costoActual != null) _fila('Costo actual', 'S/ ${costoActual.toStringAsFixed(2)}'),
             if (margenActual != null)
-              _fila('Margen actual', 'S/ ${margenActual.toStringAsFixed(2)}',
+              _fila('Margen actual',
+                  'S/ ${margenActual.toStringAsFixed(2)}'
+                  '${margenActualPct != null ? ' (${margenActualPct.toStringAsFixed(1)}%)' : ''}',
                   color: margenActual > 0
                       ? Colors.green.shade700
                       : (margenActual < 0 ? Colors.red.shade700 : Colors.orange.shade800)),
@@ -256,6 +272,7 @@ class _PrecioVehicularScreenState extends State<PrecioVehicularScreen> {
         final garantia = (m['garantia'] as num?)?.toDouble() ?? 0;
         final costo = (m['costo'] as num?)?.toDouble() ?? 0;
         final margen = (m['margen'] as num?)?.toDouble() ?? 0;
+        final margenPct = (m['margen_pct'] as num?)?.toDouble() ?? 0;
         final quien = m['registrado_por'];
         final colorM = margen > 0
             ? Colors.green.shade700
@@ -267,9 +284,15 @@ class _PrecioVehicularScreenState extends State<PrecioVehicularScreen> {
                 'Costo: S/ ${costo.toStringAsFixed(2)}'),
             subtitle: Text('Garantía: S/ ${garantia.toStringAsFixed(2)}  ·  '
                 '$fechaCorta${quien != null ? '  ·  por $quien' : ''}'),
-            trailing: Text(
-              '${margen >= 0 ? '+' : '-'}S/ ${margen.abs().toStringAsFixed(2)}',
-              style: TextStyle(color: colorM, fontWeight: FontWeight.bold),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('${margen >= 0 ? '+' : '-'}S/ ${margen.abs().toStringAsFixed(2)}',
+                    style: TextStyle(color: colorM, fontWeight: FontWeight.bold)),
+                Text('${margenPct.toStringAsFixed(1)}%',
+                    style: TextStyle(color: colorM, fontSize: 12)),
+              ],
             ),
           ),
         );
