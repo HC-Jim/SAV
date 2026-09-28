@@ -9,6 +9,10 @@ class Seguro {
   final String? fechaVencimiento;
   final double? sumaAsegurada;
   final double? prima;
+  final double? deducible;
+  final String? frecuenciaPago;
+  final String? moneda;
+  final String? contactoAseguradora;
   final String? cobertura;
   final String? observaciones;
   final int? diasParaVencer;
@@ -24,6 +28,10 @@ class Seguro {
         fechaVencimiento = j['fecha_vencimiento'],
         sumaAsegurada = (j['suma_asegurada'] as num?)?.toDouble(),
         prima = (j['prima'] as num?)?.toDouble(),
+        deducible = (j['deducible'] as num?)?.toDouble(),
+        frecuenciaPago = j['frecuencia_pago'],
+        moneda = j['moneda'],
+        contactoAseguradora = j['contacto_aseguradora'],
         cobertura = j['cobertura'],
         observaciones = j['observaciones'],
         diasParaVencer = j['dias_para_vencer'],

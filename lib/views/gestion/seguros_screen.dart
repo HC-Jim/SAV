@@ -81,9 +81,11 @@ class _SegurosScreenState extends State<SegurosScreen> {
     } else {
       etiqueta = dias != null ? 'Vence en $dias días' : 'Sin fecha';
     }
+    final sim = s.moneda == 'USD' ? 'US\$' : 'S/';
     final montos = [
-      if (s.sumaAsegurada != null) 'Suma: S/ ${s.sumaAsegurada!.toStringAsFixed(2)}',
-      if (s.prima != null) 'Prima: S/ ${s.prima!.toStringAsFixed(2)}',
+      if (s.sumaAsegurada != null) 'Suma: $sim ${s.sumaAsegurada!.toStringAsFixed(2)}',
+      if (s.prima != null) 'Prima: $sim ${s.prima!.toStringAsFixed(2)}',
+      if (s.deducible != null) 'Deducible: $sim ${s.deducible!.toStringAsFixed(2)}',
     ].join('  ·  ');
     return Card(
       child: ListTile(
