@@ -77,10 +77,12 @@ class _BuscarOrdenScreenState extends State<BuscarOrdenScreen> {
     return Card(
       child: ListTile(
         leading: const Icon(Icons.build_outlined),
-        title: Text('Orden #${o.id}  ·  ${o.tipoNombre}'),
+        title: Text('Orden #${o.id}  ·  ${o.tipoNombre}  ·  ${o.prioridadLegible}'),
         subtitle: Text('${o.vehiculoDesc}\n'
             'Mecánico: ${o.mecanicoNombre}  ·  Estado: ${o.estadoLegible}\n'
-            '${(o.indicaciones != null && o.indicaciones!.isNotEmpty) ? 'Indicaciones: ${o.indicaciones}' : ''}'),
+            '${o.fechaProgramada != null ? 'Programada: ${o.fechaProgramada}  ·  ' : ''}'
+            '${o.costoEstimado != null ? 'Costo est.: S/ ${o.costoEstimado!.toStringAsFixed(2)}' : ''}'
+            '${(o.indicaciones != null && o.indicaciones!.isNotEmpty) ? '\nIndicaciones: ${o.indicaciones}' : ''}'),
         isThreeLine: true,
       ),
     );

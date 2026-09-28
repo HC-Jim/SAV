@@ -123,96 +123,107 @@ class _ReservarVehiculoScreenState extends State<ReservarVehiculoScreen> {
             }),
           ),
           const SizedBox(height: 16),
-          if (v == null)
-            const Padding(
-              padding: EdgeInsets.only(top: 24),
-              child: Center(
-                child: Text('Busca y selecciona un vehículo para reservarlo.',
-                    style: TextStyle(color: Colors.black54)),
+          // Estructura visible desde el inicio; se llena al elegir el vehículo.
+          _datosVehiculo(v),
+          const SizedBox(height: 16),
+          const Text('Periodo de alquiler',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: v == null ? null : () => _elegirFecha(inicio: true),
+                  child: Text(_inicio == null ? 'Fecha inicio' : _fmt(_inicio!)),
+                ),
               ),
-            )
-          else ...[
-            _datosVehiculo(v),
-            const SizedBox(height: 16),
-            const Text('Periodo de alquiler',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _elegirFecha(inicio: true),
-                    child: Text(_inicio == null ? 'Fecha inicio' : _fmt(_inicio!)),
-                  ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: v == null ? null : () => _elegirFecha(inicio: false),
+                  child: Text(_fin == null ? 'Fecha fin' : _fmt(_fin!)),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _elegirFecha(inicio: false),
-                    child: Text(_fin == null ? 'Fecha fin' : _fmt(_fin!)),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            FilledButton.tonal(
-              onPressed: _procesando ? null : _verDisponibilidad,
-              child: const Text('Ver disponibilidad'),
-            ),
-            if (_mensajeDisp != null) ...[
-              const SizedBox(height: 12),
-              Text(_mensajeDisp!,
-                  style: TextStyle(
-                      color: Colors.black,
-                      fontWeight:
-                          _disponible ? FontWeight.bold : FontWeight.normal)),
+              ),
             ],
-            _resumenEstimado(v),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: (_procesando || !_disponible) ? null : _generarOrdenReserva,
-              icon: const Icon(Icons.event_available_outlined),
-              label: const Text('Generar orden de reserva'),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Verifica la disponibilidad y genera tu orden de reserva. Luego, en '
-              '"Realizar pago", paga la garantía y el alquiler para confirmarla.',
-              style: TextStyle(color: Colors.black54, fontSize: 13),
-            ),
+          ),
+          const SizedBox(height: 12),
+          FilledButton.tonal(
+            onPressed: (_procesando || v == null) ? null : _verDisponibilidad,
+            child: const Text('Ver disponibilidad'),
+          ),
+          if (_mensajeDisp != null) ...[
+            const SizedBox(height: 12),
+            Text(_mensajeDisp!,
+                style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: _disponible ? FontWeight.bold : FontWeight.normal)),
           ],
+          _resumenEstimado(v),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: (_procesando || v == null || !_disponible)
+                ? null
+                : _generarOrdenReserva,
+            icon: const Icon(Icons.event_available_outlined),
+            label: const Text('Generar orden de reserva'),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Busca y selecciona un vehículo, verifica la disponibilidad y genera tu '
+            'orden de reserva. Luego, en "Realizar pago", paga la garantía y el '
+            'alquiler para confirmarla.',
+            style: TextStyle(color: Colors.black54, fontSize: 13),
+          ),
         ],
       ),
     );
   }
 
-  Widget _datosVehiculo(Vehiculo v) => Card(
+  static const String _vacio = '—';
+
+  Widget _datosVehiculo(Vehiculo? v) => Card(
+        color: v == null ? Colors.grey.shade50 : null,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _fila('Placa', v.placa),
-              _fila('Marca', v.marca ?? '-'),
-              _fila('Modelo', v.modelo ?? '-'),
-              _fila('Año', '${v.anio ?? '-'}'),
-              _fila('Color', v.color ?? '-'),
-              _fila('SKU', v.sku ?? '-'),
-              _fila('Categoría', v.categoria ?? '-'),
+              Row(children: [
+                Icon(Icons.directions_car,
+                    size: 20, color: v == null ? Colors.black38 : Colors.black87),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(v?.descripcion ?? 'Datos del vehículo',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: v == null ? Colors.black45 : Colors.black87)),
+                ),
+                if (v == null)
+                  const Text('Sin seleccionar',
+                      style: TextStyle(fontSize: 12, color: Colors.black38)),
+              ]),
+              const Divider(height: 16),
+              _fila('Placa', v?.placa ?? _vacio),
+              _fila('Marca', v?.marca ?? _vacio),
+              _fila('Modelo', v?.modelo ?? _vacio),
+              _fila('Año', v?.anio?.toString() ?? _vacio),
+              _fila('Color', v?.color ?? _vacio),
+              _fila('SKU', v?.sku ?? _vacio),
+              _fila('Categoría', v?.categoria ?? _vacio),
               _fila('Precio de alquiler',
-                  'S/ ${v.precioAlquiler.toStringAsFixed(2)} (${Vehiculo.diasPorDefecto} días)'),
-              _fila('Garantía', 'S/ ${v.garantia.toStringAsFixed(2)}'),
+                  v == null ? _vacio : 'S/ ${v.precioAlquiler.toStringAsFixed(2)} (${Vehiculo.diasPorDefecto} días)'),
+              _fila('Garantía', v == null ? _vacio : 'S/ ${v.garantia.toStringAsFixed(2)}'),
             ],
           ),
         ),
       );
 
-  Widget _resumenEstimado(Vehiculo v) {
+  Widget _resumenEstimado(Vehiculo? v) {
     final dias = (_inicio != null && _fin != null && _fin!.difference(_inicio!).inDays > 0)
         ? _fin!.difference(_inicio!).inDays
         : Vehiculo.diasPorDefecto;
-    final alquiler = v.precioAlquiler;
-    final garantia = v.garantia;
+    final alquiler = v?.precioAlquiler ?? 0;
+    final garantia = v?.garantia ?? 0;
     final total = alquiler + garantia;
     Widget fila(String k, String val, {bool bold = false}) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 3),

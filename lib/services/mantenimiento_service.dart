@@ -34,12 +34,20 @@ class MantenimientoService {
     required int mecanicoId,
     required int tipoMantenimientoId,
     String? indicaciones,
+    String? prioridad,
+    int? kmIngreso,
+    String? fechaProgramada,
+    double? costoEstimado,
   }) async {
     final data = await _api.post('$_base/ordenes', {
       'vehiculo_id': vehiculoId,
       'mecanico_id': mecanicoId,
       'tipo_mantenimiento_id': tipoMantenimientoId,
       'indicaciones': indicaciones,
+      'prioridad': prioridad,
+      'km_ingreso': kmIngreso,
+      'fecha_programada': fechaProgramada,
+      'costo_estimado': costoEstimado,
     });
     return OrdenMantenimiento.fromJson(data as Map<String, dynamic>);
   }

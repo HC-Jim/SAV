@@ -21,12 +21,18 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
   final _svc = MantenimientoService();
   final _formKey = GlobalKey<FormState>();
   final _descCtrl = TextEditingController();
+  final _kmCtrl = TextEditingController();
+  final _fechaProgCtrl = TextEditingController();
+  final _costoCtrl = TextEditingController();
+
+  static const _prioridades = ['BAJA', 'MEDIA', 'ALTA', 'URGENTE'];
 
   late Future<void> _carga;
   List<TipoMantenimiento> _tipos = [];
   Vehiculo? _vehiculo;
   Usuario? _mecanico;
   int? _tipoId;
+  String _prioridad = 'MEDIA';
   bool _guardando = false;
 
   @override
@@ -34,6 +40,21 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
     super.initState();
     _vehiculo = widget.vehiculoPreseleccionado;
     _carga = _cargarDatos();
+  }
+
+  void _onVehiculo(Vehiculo? v) {
+    setState(() {
+      _vehiculo = v;
+      // Prefill del km de ingreso con el kilometraje actual del vehículo.
+      if (v?.kilometraje != null) _kmCtrl.text = '${v!.kilometraje}';
+    });
+  }
+
+  TipoMantenimiento? get _tipoSel {
+    for (final t in _tipos) {
+      if (t.id == _tipoId) return t;
+    }
+    return null;
   }
 
   Future<void> _cargarDatos() async {
@@ -45,8 +66,23 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
 
   @override
   void dispose() {
-    _descCtrl.dispose();
+    for (final c in [_descCtrl, _kmCtrl, _fechaProgCtrl, _costoCtrl]) {
+      c.dispose();
+    }
     super.dispose();
+  }
+
+  Future<void> _pickFechaProg() async {
+    final hoy = DateTime.now();
+    final d = await showDatePicker(
+      context: context,
+      initialDate: hoy,
+      firstDate: hoy,
+      lastDate: hoy.add(const Duration(days: 365)),
+    );
+    if (d == null) return;
+    _fechaProgCtrl.text =
+        '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
   }
 
   Future<void> _guardar() async {
@@ -71,6 +107,11 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
         mecanicoId: _mecanico!.id,
         tipoMantenimientoId: _tipoId!,
         indicaciones: indicaciones,
+        prioridad: _prioridad,
+        kmIngreso: int.tryParse(_kmCtrl.text.trim()),
+        fechaProgramada:
+            _fechaProgCtrl.text.trim().isEmpty ? null : _fechaProgCtrl.text.trim(),
+        costoEstimado: double.tryParse(_costoCtrl.text.trim()),
       );
       if (!mounted) return;
       await _mostrarExito(orden.id, indicaciones);
@@ -147,7 +188,7 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
                   value: _vehiculo,
                   soloDisponibles: true,
                   label: 'Vehículo *',
-                  onChanged: (v) => setState(() => _vehiculo = v),
+                  onChanged: _onVehiculo,
                 ),
                 _infoVehiculo(_vehiculo),
                 const SizedBox(height: 16),
@@ -194,6 +235,51 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
                   onChanged: (v) => setState(() => _tipoId = v),
                   validator: (v) => v == null ? 'Selecciona un tipo' : null,
                 ),
+                _infoTipo(_tipoSel),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  initialValue: _prioridad,
+                  decoration: const InputDecoration(
+                    labelText: 'Prioridad *',
+                    prefixIcon: Icon(Icons.flag_outlined),
+                  ),
+                  items: _prioridades
+                      .map((p) => DropdownMenuItem(
+                          value: p, child: Text(_prioridadLegible(p))))
+                      .toList(),
+                  onChanged: (v) => setState(() => _prioridad = v ?? _prioridad),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _kmCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Kilometraje de ingreso (km)',
+                    hintText: 'Odómetro al ingresar el vehículo',
+                    prefixIcon: Icon(Icons.speed),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _fechaProgCtrl,
+                  readOnly: true,
+                  onTap: _pickFechaProg,
+                  decoration: const InputDecoration(
+                    labelText: 'Fecha programada',
+                    hintText: 'Fecha estimada de atención',
+                    prefixIcon: Icon(Icons.event),
+                    suffixIcon: Icon(Icons.calendar_today, size: 18),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _costoCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Costo estimado (S/)',
+                    prefixIcon: Icon(Icons.attach_money),
+                  ),
+                ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _descCtrl,
@@ -233,6 +319,41 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
           ['Color', v?.color ?? _vacio],
           ['Kilometraje', v?.kilometraje != null ? '${v!.kilometraje} km' : _vacio],
           ['Estado', v?.estadoLegible ?? _vacio],
+        ],
+      );
+
+  String _prioridadLegible(String p) {
+    switch (p) {
+      case 'BAJA':
+        return 'Baja';
+      case 'ALTA':
+        return 'Alta';
+      case 'URGENTE':
+        return 'Urgente';
+      default:
+        return 'Media';
+    }
+  }
+
+  Widget _infoTipo(TipoMantenimiento? t) => _tarjeta(
+        icon: Icons.build_circle_outlined,
+        titulo: t?.nombre ?? 'Datos del tipo de mantenimiento',
+        activo: t != null,
+        filas: [
+          [
+            'Categoría',
+            t == null
+                ? _vacio
+                : (t.categoria == 'PROGRAMADO'
+                    ? 'Programado'
+                    : (t.categoria == 'NO_PROGRAMADO' ? 'No programado' : (t.categoria ?? _vacio)))
+          ],
+          ['Frecuencia', t?.frecuenciaTexto ?? _vacio],
+          [
+            'Duración estimada',
+            t?.duracionEstimadaHoras != null ? '${t!.duracionEstimadaHoras} h' : _vacio
+          ],
+          ['Descripción', (t?.descripcion?.isNotEmpty ?? false) ? t!.descripcion! : _vacio],
         ],
       );
 

@@ -212,45 +212,46 @@ class _RealizarPagoScreenState extends State<RealizarPagoScreen> {
             }),
           ),
           const SizedBox(height: 16),
-          if (_reserva == null)
-            const Padding(
-              padding: EdgeInsets.only(top: 24),
-              child: Center(
-                child: Text('Busca y selecciona una reserva pendiente de pago.',
-                    style: TextStyle(color: Colors.black54)),
-              ),
-            )
-          else ...[
-            _resumen(),
-            const SizedBox(height: 12),
-            _seccionCupon(),
-            const SizedBox(height: 12),
-            _seccionMetodo(),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: _procesando ? null : _pagar,
-              icon: const Icon(Icons.lock_outline),
-              label: Text(_procesando
-                  ? 'Procesando...'
-                  : 'Pagar S/ ${_total.toStringAsFixed(2)}'),
-            ),
-          ],
+          // Estructura visible desde el inicio; se llena al elegir la reserva.
+          _resumen(),
+          const SizedBox(height: 12),
+          _seccionCupon(),
+          const SizedBox(height: 12),
+          _seccionMetodo(),
+          const SizedBox(height: 20),
+          FilledButton.icon(
+            onPressed: (_procesando || _reserva == null) ? null : _pagar,
+            icon: const Icon(Icons.lock_outline),
+            label: Text(_procesando
+                ? 'Procesando...'
+                : 'Pagar S/ ${_total.toStringAsFixed(2)}'),
+          ),
         ],
       ),
     );
   }
 
   Widget _resumen() {
-    final r = _reserva!;
+    final r = _reserva;
     return Card(
+      color: r == null ? Colors.grey.shade50 : null,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(r.vehiculo?.descripcion ?? 'Vehículo ${r.vehiculoId}',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            Text('Del ${r.fechaInicio ?? '-'} al ${r.fechaFin ?? '-'}',
+            Text(
+                r == null
+                    ? 'Datos de la reserva'
+                    : (r.vehiculo?.descripcion ?? 'Vehículo ${r.vehiculoId}'),
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: r == null ? Colors.black45 : Colors.black87)),
+            Text(
+                r == null
+                    ? 'Sin seleccionar'
+                    : 'Del ${r.fechaInicio ?? '-'} al ${r.fechaFin ?? '-'}',
                 style: const TextStyle(color: Colors.black54)),
             const Divider(height: 24),
             _fila('Alquiler', _alquiler),
@@ -302,7 +303,7 @@ class _RealizarPagoScreenState extends State<RealizarPagoScreen> {
                     ),
                     const SizedBox(width: 8),
                     FilledButton.tonal(
-                      onPressed: _validandoCupon ? null : _validarCupon,
+                      onPressed: (_validandoCupon || _reserva == null) ? null : _validarCupon,
                       child: Text(_validandoCupon ? '...' : 'Validar'),
                     ),
                   ],

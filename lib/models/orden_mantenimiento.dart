@@ -6,6 +6,10 @@ class OrdenMantenimiento {
   final int? tipoMantenimientoId;
   final String? estado;
   final String? indicaciones;
+  final String? prioridad;
+  final int? kmIngreso;
+  final String? fechaProgramada;
+  final double? costoEstimado;
   final String? fechaCreacion;
   final Map<String, dynamic>? vehiculo;
   final Map<String, dynamic>? tipoMantenimiento;
@@ -18,10 +22,29 @@ class OrdenMantenimiento {
         tipoMantenimientoId = j['tipo_mantenimiento_id'] as int?,
         estado = j['estado'] as String?,
         indicaciones = j['indicaciones'] as String?,
+        prioridad = j['prioridad'] as String?,
+        kmIngreso = j['km_ingreso'] as int?,
+        fechaProgramada = j['fecha_programada'] as String?,
+        costoEstimado = (j['costo_estimado'] as num?)?.toDouble(),
         fechaCreacion = j['fecha_creacion'] as String?,
         vehiculo = j['vehiculo'] as Map<String, dynamic>?,
         tipoMantenimiento = j['tipo_mantenimiento'] as Map<String, dynamic>?,
         mecanico = j['mecanico'] as Map<String, dynamic>?;
+
+  String get prioridadLegible {
+    switch (prioridad) {
+      case 'BAJA':
+        return 'Baja';
+      case 'ALTA':
+        return 'Alta';
+      case 'URGENTE':
+        return 'Urgente';
+      case 'MEDIA':
+        return 'Media';
+      default:
+        return prioridad ?? '-';
+    }
+  }
 
   String get vehiculoDesc {
     final v = vehiculo;

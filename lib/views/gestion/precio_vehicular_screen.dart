@@ -124,46 +124,38 @@ class _PrecioVehicularScreenState extends State<PrecioVehicularScreen> {
             onChanged: _seleccionar,
           ),
           const SizedBox(height: 16),
-          if (v == null)
-            const Padding(
-              padding: EdgeInsets.only(top: 24),
-              child: Center(
-                child: Text('Busca un vehículo para registrar y ver su precio.',
-                    style: TextStyle(color: Colors.black54)),
-              ),
-            )
-          else ...[
-            _cardActual(v),
-            const SizedBox(height: 12),
-            const Text('Registrar nuevo precio',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            _campo(_precio, 'Precio de alquiler (S/ por ${Vehiculo.diasPorDefecto} días)'),
-            _campo(_garantia, 'Garantía / depósito (S/)'),
-            // El costo se fija en la compra: aquí solo se muestra (bloqueado).
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              child: TextField(
-                controller: _costo,
-                enabled: false,
-                decoration: const InputDecoration(
-                  labelText: 'Precio costo (S/) — se fija en la compra',
-                  suffixIcon: Icon(Icons.lock_outline, size: 18),
-                ),
+          // Estructura visible desde el inicio; se llena al elegir el vehículo.
+          _cardActual(v),
+          const SizedBox(height: 12),
+          const Text('Registrar nuevo precio',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          _campo(_precio, 'Precio de alquiler (S/ por ${Vehiculo.diasPorDefecto} días)',
+              habilitado: v != null),
+          _campo(_garantia, 'Garantía / depósito (S/)', habilitado: v != null),
+          // El costo se fija en la compra: aquí solo se muestra (bloqueado).
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            child: TextField(
+              controller: _costo,
+              enabled: false,
+              decoration: const InputDecoration(
+                labelText: 'Precio costo (S/) — se fija en la compra',
+                suffixIcon: Icon(Icons.lock_outline, size: 18),
               ),
             ),
-            _evaluacionMargen(),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: _guardando ? null : _registrar,
-              icon: const Icon(Icons.save),
-              label: Text(_guardando ? 'Registrando...' : 'Registrar precio'),
-            ),
-            const SizedBox(height: 20),
-            const Text('Historial de precios',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            _historial(),
-          ],
+          ),
+          _evaluacionMargen(),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: (_guardando || v == null) ? null : _registrar,
+            icon: const Icon(Icons.save),
+            label: Text(_guardando ? 'Registrando...' : 'Registrar precio'),
+          ),
+          const SizedBox(height: 20),
+          const Text('Historial de precios',
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          _historial(),
         ],
       ),
     );
@@ -204,7 +196,24 @@ class _PrecioVehicularScreenState extends State<PrecioVehicularScreen> {
     );
   }
 
-  Widget _cardActual(Vehiculo v) {
+  Widget _cardActual(Vehiculo? v) {
+    if (v == null) {
+      return Card(
+        color: Colors.grey.shade50,
+        child: const Padding(
+          padding: EdgeInsets.all(14),
+          child: Row(children: [
+            Icon(Icons.sell_outlined, size: 20, color: Colors.black38),
+            SizedBox(width: 8),
+            Text('Datos del precio',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black45)),
+            Spacer(),
+            Text('Sin seleccionar',
+                style: TextStyle(fontSize: 12, color: Colors.black38)),
+          ]),
+        ),
+      );
+    }
     final s = _stats;
     final promedio = (s?['promedio'] as num?)?.toDouble();
     final variacion = (s?['variacion'] as num?)?.toDouble();
@@ -311,10 +320,11 @@ class _PrecioVehicularScreenState extends State<PrecioVehicularScreen> {
         ),
       );
 
-  Widget _campo(TextEditingController c, String label) => Padding(
+  Widget _campo(TextEditingController c, String label, {bool habilitado = true}) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: TextField(
           controller: c,
+          enabled: habilitado,
           keyboardType: TextInputType.number,
           onChanged: (_) => setState(() {}),
           decoration: InputDecoration(labelText: label),
