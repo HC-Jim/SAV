@@ -4,6 +4,7 @@ import '../models/usuario.dart';
 import '../models/vehiculo.dart';
 import '../services/api_client.dart';
 import '../services/mantenimiento_service.dart';
+import '../services/pdf_generator.dart';
 import '../widgets/selector_mecanico.dart';
 import '../widgets/selector_vehiculo.dart';
 
@@ -72,7 +73,7 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
         indicaciones: indicaciones,
       );
       if (!mounted) return;
-      await _mostrarExito(orden.id);
+      await _mostrarExito(orden.id, indicaciones);
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } on ApiException catch (e) {
@@ -83,20 +84,48 @@ class _CrearOrdenScreenState extends State<CrearOrdenScreen> {
     }
   }
 
-  Future<void> _mostrarExito(int id) => showDialog<void>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          icon: const Icon(Icons.check_circle, color: Colors.green, size: 40),
-          title: const Text('Orden creada con éxito'),
-          content: Text('La orden de mantenimiento #$id se registró correctamente.'),
-          actions: [
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Aceptar'),
-            ),
-          ],
-        ),
-      );
+  /// Éxito → opción de imprimir la orden en PDF (funcionalidad de impresión).
+  Future<void> _mostrarExito(int id, String? indicaciones) async {
+    final imprimir = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.check_circle, color: Colors.green, size: 40),
+        title: const Text('Orden creada con éxito'),
+        content: Text('La orden de mantenimiento #$id se registró correctamente.\n\n'
+            '¿Deseas imprimir el documento en PDF?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cerrar'),
+          ),
+          FilledButton.icon(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            icon: const Icon(Icons.picture_as_pdf),
+            label: const Text('Imprimir PDF'),
+          ),
+        ],
+      ),
+    );
+    if (imprimir != true) return;
+
+    TipoMantenimiento? tipo;
+    for (final t in _tipos) {
+      if (t.id == _tipoId) {
+        tipo = t;
+        break;
+      }
+    }
+    await generarOrdenPdf(
+      id: id,
+      vehiculo: _vehiculo!,
+      mecanico: _mecanico!.especialidad == null
+          ? _mecanico!.nombre
+          : '${_mecanico!.nombre} · ${_mecanico!.especialidad}',
+      tipo: tipo?.nombre ?? '-',
+      tipoDetalle: tipo?.frecuenciaTexto,
+      indicaciones: indicaciones,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
