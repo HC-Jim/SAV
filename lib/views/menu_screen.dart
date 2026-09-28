@@ -8,6 +8,7 @@ import 'cliente/realizar_pago_screen.dart';
 import 'cliente/reservar_vehiculo_screen.dart';
 import 'crear_orden_screen.dart';
 import 'gestion/cupones_screen.dart';
+import 'gestion/precio_vehicular_screen.dart';
 import 'gestion/registrar_seguro_screen.dart';
 import 'gestion/seguros_screen.dart';
 import 'gestion/vehiculos_screen.dart';
@@ -109,9 +110,12 @@ class MenuScreen extends StatelessWidget {
     }
     if (usuario.esAdministrador) {
       return [
-        // Vehículos (CRUD): editar datos y/o precio, ver variación, crear nuevo.
-        _OpcionMenu('Vehículos', 'Editar datos y precios, o crear un vehículo',
+        // Vehículos (CRUD de datos): editar datos o crear un vehículo nuevo.
+        _OpcionMenu('Vehículos', 'Editar datos del vehículo o crear uno nuevo',
             Icons.directions_car_outlined, () => const VehiculosScreen()),
+        // Precio vehicular: registrar precio (cabecera/detalle) y ver historial.
+        _OpcionMenu('Precio vehicular', 'Registrar el precio y ver su historial',
+            Icons.sell_outlined, () => const PrecioVehicularScreen()),
         // Registrar Seguro (interfaz completa).
         _OpcionMenu('Registrar seguro', 'Registrar una póliza de seguro',
             Icons.add_moderator_outlined, () => const RegistrarSeguroScreen()),

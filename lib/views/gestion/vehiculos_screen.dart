@@ -4,10 +4,10 @@ import '../../services/api_client.dart';
 import '../../services/gestion_service.dart';
 import '../../widgets/selector_vehiculo.dart';
 
-/// Vehículos (CRUD) — «include» Buscar Vehículo.
-/// Interfaz única para editar los datos del vehículo y/o su precio de alquiler
-/// y garantía, ver la variación de precios (último, promedio) y crear un
-/// vehículo nuevo. El SKU se genera automáticamente y no es editable.
+/// Vehículos (CRUD de datos) — «include» Buscar Vehículo.
+/// Edita los datos del vehículo y permite crear uno nuevo. El SKU se genera
+/// automáticamente y no es editable. El precio de alquiler y la garantía se
+/// gestionan en la interfaz "Precio vehicular".
 class VehiculosScreen extends StatefulWidget {
   const VehiculosScreen({super.key});
   @override
@@ -24,16 +24,12 @@ class _VehiculosScreenState extends State<VehiculosScreen> {
   final _modelo = TextEditingController();
   final _anio = TextEditingController();
   final _color = TextEditingController();
-  final _precio = TextEditingController();
-  final _garantia = TextEditingController();
   String _categoria = _categorias.first;
-
-  Map<String, dynamic>? _stats;
   bool _guardando = false;
 
   @override
   void dispose() {
-    for (final c in [_placa, _marca, _modelo, _anio, _color, _precio, _garantia]) {
+    for (final c in [_placa, _marca, _modelo, _anio, _color]) {
       c.dispose();
     }
     super.dispose();
@@ -42,7 +38,7 @@ class _VehiculosScreenState extends State<VehiculosScreen> {
   void _snack(String m) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
 
-  Future<void> _seleccionar(Vehiculo v) async {
+  void _seleccionar(Vehiculo v) {
     setState(() {
       _sel = v;
       _placa.text = v.placa;
@@ -50,30 +46,16 @@ class _VehiculosScreenState extends State<VehiculosScreen> {
       _modelo.text = v.modelo ?? '';
       _anio.text = v.anio?.toString() ?? '';
       _color.text = v.color ?? '';
-      _precio.text = v.precioAlquiler.toStringAsFixed(2);
-      _garantia.text = v.garantia.toStringAsFixed(2);
       _categoria = (v.categoria != null && _categorias.contains(v.categoria))
           ? v.categoria!
           : _categorias.first;
-      _stats = null;
     });
-    await _cargarStats(v.id);
-  }
-
-  Future<void> _cargarStats(int id) async {
-    try {
-      final s = await _svc.historialPrecios(id);
-      if (mounted) setState(() => _stats = s);
-    } on ApiException catch (_) {
-      // Silencioso: las estadísticas son informativas.
-    }
   }
 
   Future<void> _guardar() async {
     if (_sel == null) return;
     setState(() => _guardando = true);
     try {
-      // 1) Datos del vehículo
       await _svc.actualizarVehiculo(_sel!.id, {
         'placa': _placa.text.trim(),
         'marca': _marca.text.trim(),
@@ -82,34 +64,8 @@ class _VehiculosScreenState extends State<VehiculosScreen> {
         'color': _color.text.trim(),
         'categoria': _categoria,
       });
-      // 2) Precio/garantía (solo si cambiaron, para no ensuciar el historial)
-      final precio = double.tryParse(_precio.text.trim()) ?? 0;
-      final garantia = double.tryParse(_garantia.text.trim()) ?? 0;
-      final cambioPrecio =
-          precio != _sel!.precioAlquiler || garantia != _sel!.garantia;
-      if (cambioPrecio) {
-        await _svc.actualizarPrecioVehiculo(
-            _sel!.id, {'precio_normal': precio, 'garantia': garantia});
-      }
       if (!mounted) return;
-      _snack('Cambios guardados');
-      // Refresca el vehículo en memoria y las estadísticas.
-      setState(() => _sel = Vehiculo(
-            id: _sel!.id,
-            sku: _sel!.sku,
-            placa: _placa.text.trim(),
-            marca: _marca.text.trim(),
-            modelo: _modelo.text.trim(),
-            anio: int.tryParse(_anio.text.trim()),
-            color: _color.text.trim(),
-            categoria: _categoria,
-            precioAlquiler: precio,
-            garantia: garantia,
-            kilometraje: _sel!.kilometraje,
-            fechaProximoMantenimiento: _sel!.fechaProximoMantenimiento,
-            estado: _sel!.estado,
-          ));
-      if (cambioPrecio) await _cargarStats(_sel!.id);
+      _snack('Datos guardados');
     } on ApiException catch (e) {
       _snack(e.mensaje);
     } finally {
@@ -152,15 +108,13 @@ class _VehiculosScreenState extends State<VehiculosScreen> {
             const Padding(
               padding: EdgeInsets.only(top: 24),
               child: Center(
-                child: Text('Busca un vehículo para editar sus datos y precios,\n'
+                child: Text('Busca un vehículo para editar sus datos,\n'
                     'o crea uno nuevo con el botón +.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.black54)),
               ),
             )
           else ...[
-            if (_stats != null) _cardStats(v),
-            const SizedBox(height: 12),
             const Text('Datos del vehículo',
                 style: TextStyle(fontWeight: FontWeight.bold)),
             _campo(TextEditingController(text: v.sku ?? '-'), 'SKU (no editable)',
@@ -182,67 +136,22 @@ class _VehiculosScreenState extends State<VehiculosScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text('Precios',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            _campo(_precio, 'Precio de alquiler (S/ por ${Vehiculo.diasPorDefecto} días)',
-                numero: true),
-            _campo(_garantia, 'Garantía / depósito (S/)', numero: true),
+            Text('Precio de alquiler actual: S/ ${v.precioAlquiler.toStringAsFixed(2)}  ·  '
+                'Garantía: S/ ${v.garantia.toStringAsFixed(2)}',
+                style: const TextStyle(color: Colors.black54, fontSize: 13)),
+            const Text('El precio se gestiona en "Precio vehicular".',
+                style: TextStyle(color: Colors.black54, fontSize: 12)),
             const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: _guardando ? null : _guardar,
               icon: const Icon(Icons.save),
-              label: Text(_guardando ? 'Guardando...' : 'Guardar cambios'),
+              label: Text(_guardando ? 'Guardando...' : 'Guardar datos'),
             ),
           ],
         ],
       ),
     );
   }
-
-  Widget _cardStats(Vehiculo v) {
-    final s = _stats!;
-    final ultimo = (s['ultimo'] as num?)?.toDouble() ?? 0;
-    final promedio = (s['promedio'] as num?)?.toDouble() ?? 0;
-    final variacion = (s['variacion'] as num?)?.toDouble() ?? 0;
-    final variacionPct = (s['variacion_pct'] as num?)?.toDouble() ?? 0;
-    final cambios = (s['cambios'] as num?)?.toInt() ?? 0;
-    final subeBaja = variacion == 0
-        ? 'sin variación'
-        : (variacion > 0
-            ? '▲ S/ ${variacion.toStringAsFixed(2)} (${variacionPct.toStringAsFixed(1)}%)'
-            : '▼ S/ ${variacion.abs().toStringAsFixed(2)} (${variacionPct.toStringAsFixed(1)}%)');
-    return Card(
-      color: const Color(0xFFF3F6FA),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(v.descripcion,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-            Text('Categoría: ${v.categoria ?? '-'}  ·  ${v.estadoLegible}',
-                style: const TextStyle(color: Colors.black54)),
-            const Divider(),
-            _filaStat('Último precio', 'S/ ${ultimo.toStringAsFixed(2)}'),
-            _filaStat('Precio promedio', 'S/ ${promedio.toStringAsFixed(2)}'),
-            _filaStat('Variación total', subeBaja),
-            _filaStat('N° de cambios de precio', '$cambios'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _filaStat(String k, String val) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(k, style: const TextStyle(color: Colors.black87)),
-            Text(val, style: const TextStyle(fontWeight: FontWeight.bold)),
-          ],
-        ),
-      );
 
   Widget _campo(TextEditingController c, String label,
           {bool numero = false, bool habilitado = true}) =>
@@ -257,7 +166,7 @@ class _VehiculosScreenState extends State<VehiculosScreen> {
       );
 }
 
-/// Formulario para crear un vehículo nuevo (con su precio y garantía).
+/// Formulario para crear un vehículo nuevo (con su precio y garantía iniciales).
 class _NuevoVehiculoScreen extends StatefulWidget {
   const _NuevoVehiculoScreen();
   @override
@@ -322,7 +231,8 @@ class _NuevoVehiculoScreenState extends State<_NuevoVehiculoScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('El SKU se genera automáticamente al guardar.',
+          const Text('El SKU se genera automáticamente al guardar. El precio '
+              'inicial queda registrado en el historial de "Precio vehicular".',
               style: TextStyle(color: Colors.black54)),
           const SizedBox(height: 8),
           _campo(_placa, 'Placa *'),
